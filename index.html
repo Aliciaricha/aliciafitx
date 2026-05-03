@@ -553,12 +553,11 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 <div id="page-program" class="page">
   <div class="prog-header px">
     <h1 class="serif">Program</h1>
-    <p>Your optimised 8-week plan</p>
+    <p>One phase. Keep going. Progress the weight.</p>
   </div>
   <div style="height:16px"></div>
   <div class="tabs" id="prog-phase-tabs">
-    <div class="tab active" onclick="selectPhase(1,this)">Weeks 1–4</div>
-    <div class="tab" onclick="selectPhase(2,this)">Weeks 5–8</div>
+    <div class="tab active">Your Programme</div>
   </div>
   <div id="prog-days"></div>
 </div>
@@ -1028,175 +1027,75 @@ const PROGRAM = {
   1: {
     mon:{ name:"Monday", focus:"Glutes, Quads & Hamstrings",
     warmup:[
-      {name:"Hip Circle — Glute Activation",reps:"10 reps each direction",note:"On all fours. Draw big slow circles with each knee. Wakes up the hip joint before loading."},
-      {name:"Banded Glute Bridge",reps:"2 × 15 reps",note:"Light band above knees. Drive knees out. This fires the glute-mind connection before heavy hip thrusts — do not skip."},
+      {name:"Hip Circle",reps:"10 reps each direction",note:"On all fours. Draw big slow circles with each knee. Wakes up the hip joint before loading."},
+      {name:"Banded Glute Bridge",reps:"2 × 15 reps",note:"Light band above knees. Drive knees out. Fires the glute-mind connection before heavy hip thrusts — do not skip."},
       {name:"Bodyweight Squat",reps:"2 × 10 reps",note:"Slow and deep. Feel the hips open. Primes the squat pattern."},
     ],
     exercises:[
-      {name:"Barbell Hip Thrust",type:"Compound",sets:3,reps:"10 reps",rest:REST.compound,note:"Drive through heels. Squeeze hard at top for 1 sec. This is your priority lift — hit it first while completely fresh. 3 sets keeps you fresh enough to squat well immediately after.",key:true},
-      {name:"Squat",type:"Compound",sets:3,reps:"8 reps",rest:REST.compound,note:"Chest up, knees track over toes. Pause 1 sec at bottom. 3 quality sets after hip thrusts is plenty — progress the weight weekly."},
-      {name:"Romanian Deadlift",type:"Compound",sets:3,reps:"10 reps",rest:REST.compound,note:"Hinge at hips, soft knee, feel hamstring stretch. Not a squat.",changed:true},
-      {name:"Barbell Lunge",type:"Accessory",sets:3,reps:"10 reps/leg",rest:REST.accessory,note:"10 reps each leg = 20 total steps per set. Longer stride = more glute activation. Torso upright throughout."},
-      {name:"Machine Hip Abduction",type:"Accessory",sets:3,reps:"12 reps",rest:REST.accessory,note:"Slow eccentric — 3 sec on the way back in."},
-      {name:"Plank",type:"Core",sets:2,reps:"45 sec",rest:REST.circuit,note:"Core finisher — glutes and everything else is already fatigued so the plank works harder here. Squeeze abs and glutes. Don't let hips sag or rise."},
-      {name:"Stairmaster",type:"Cardio",sets:1,reps:"15 min",rest:REST.cardio,note:"Moderate pace. Do this last after all lifting.",cardio:true},
+      {name:"Hip Thrust Machine",type:"Compound",sets:4,reps:"10 reps",rest:REST.compound,note:"Priority lift — always first, every glute day. Drive through heels, squeeze hard at top for 1 sec. Start 70kg — hit 12 reps all 4 sets to add 5kg.",key:true},
+      {name:"Squat",type:"Compound",sets:3,reps:"8 reps",rest:REST.compound,note:"Goblet or hack — no barbell back squat. Chest up, knees track over toes. Start 42.5kg — hit 10 reps all 3 sets to add 2.5kg."},
+      {name:"Romanian Deadlift",type:"Compound",sets:3,reps:"10 reps",rest:REST.compound,note:"Hip hinge — feel hamstrings load throughout. Push hips back before lowering bar. Start 40kg — hit 12 reps all 3 sets to add 2.5kg."},
+      {name:"Machine Hip Abduction",type:"Accessory",sets:3,reps:"12 reps",rest:REST.accessory,note:"Squeeze at full range — mind-muscle focus. Slow eccentric. Hit 15 reps easily → add one plate."},
+      {name:"Dead Bug — Breathing",type:"Core",sets:3,reps:"45 sec",rest:REST.circuit,note:"Exhale fully, press lower back flat before each rep. Extend opposite arm and leg slowly. Progress to 60 sec when fully controlled."},
     ]},
     tue:{ name:"Tuesday", focus:"Back, Biceps & Core",
     warmup:[
       {name:"Arm Circles",reps:"30 sec each direction",note:"Forward and backward. Loosens shoulder capsule before pulling."},
-      {name:"Band Pull-Apart",reps:"2 × 15 reps",note:"Light resistance band at chest height. Squeeze shoulder blades together. Activates rear delts and rotator cuff."},
+      {name:"Band Pull-Apart",reps:"2 × 15 reps",note:"Light resistance band at chest height. Activates rear delts and rotator cuff."},
       {name:"Cat-Cow",reps:"10 slow reps",note:"On all fours. Arch and round the spine fully. Mobilises the thoracic spine for all the rowing ahead."},
     ],
     exercises:[
-      {name:"Wide Grip Pull Down",type:"Compound",sets:4,reps:"10 reps",rest:REST.compound,note:"Pull elbows to ribs. Don't lean back excessively."},
-      {name:"Machine Row",type:"Compound",sets:3,reps:"10 reps",rest:REST.compound,note:"Squeeze shoulder blades together at the end of each rep."},
-      {name:"Cable Face Pull",type:"Superset A",sets:3,reps:"10 reps",rest:REST.accessory,note:"Pull to forehead, thumbs back. Key for shoulder health."},
-      {name:"Cable Rope Straight Arm Pull Down",type:"Superset B",sets:3,reps:"10 reps",rest:REST.accessory,note:"Keep arms straight, feel lats engage. No momentum."},
-      {name:"Cable High Row",type:"Accessory",sets:3,reps:"10 reps",rest:REST.accessory,note:"Elbows high and wide — targets upper back."},
-      {name:"DB Rear Delt Fly",type:"Accessory",sets:3,reps:"12 reps",rest:REST.accessory,note:"Hinge forward 45°, slight elbow bend. Light weight only.",changed:true},
-      {name:"Standing Alt DB Bicep Curl",type:"Accessory",sets:3,reps:"12 reps",rest:REST.accessory,note:"Full range — all the way down. No swinging."},
-      {name:"Hip Raise Plank",type:"Straight Set",sets:3,reps:"45 sec",rest:REST.circuit,note:"Forearm plank. Drive hips up into a pike, pause 1 sec, lower back to plank. Exhale on every raise. Fires TVA and obliques — the Mikayla core line exercise. Do these on the mat area, away from cables."},
-      {name:"Dead Bug — Breathing",type:"Straight Set",sets:3,reps:"45 sec",rest:REST.circuit,note:"Stay on the mat. Exhale fully, draw navel to spine, extend opposite arm and leg slowly — 5 sec count. Lower back flat throughout. The transverse abdominis corset effect."},
-      {name:"Cable Crunch",type:"Straight Set",sets:3,reps:"12 reps",rest:REST.circuit,note:"Now move to the cable station. Kneel, rope at top. Round the spine — elbows to thighs. 1 sec squeeze at bottom. Progressive overload — add weight when 12 feels easy."},
+      {name:"Wide Grip Pulldown",type:"Compound",sets:4,reps:"10 reps",rest:REST.compound,note:"Full stretch at top, squeeze lats at bottom. Start 35–40kg — hit 12 reps all 4 sets to add 5kg.",key:true},
+      {name:"Machine Row",type:"Compound",sets:3,reps:"10 reps",rest:REST.compound,note:"Elbows close to body — full retraction at top. Hit 12 reps all 3 sets to add weight."},
+      {name:"Standing Alt DB Bicep Curl",type:"Accessory",sets:3,reps:"12 reps",rest:REST.accessory,note:"Slow eccentric — 2 seconds down. Start 8–10kg DBs. 14 reps easy → move to next DB weight."},
+      {name:"Hip Raise Plank",type:"Core",sets:3,reps:"45 sec",rest:REST.circuit,note:"Forearm plank. Drive hips up into a pike, pause 1 sec, lower back to plank. Slow and controlled — no momentum. Progress to 60 sec."},
+      {name:"Dead Bug — Breathing",type:"Core",sets:3,reps:"45 sec",rest:REST.circuit,note:"Exhale fully, lower back flat on every rep. Extend opposite arm and leg slowly — 5 sec count. Progress to 60 sec when controlled."},
+      {name:"Incline Treadmill Walk",type:"Cardio",sets:1,reps:"20 min",rest:REST.cardio,note:"Zone 3 · 15% incline · 5.5–6.0 km/h · After lifting. Legs fresh from back session — push the pace.",cardio:true},
     ]},
     wed:{ name:"Wednesday", focus:"Glutes & Hamstrings",
     warmup:[
-      {name:"Banded Clamshell",reps:"2 × 15 reps each side",note:"Lie on side, band above knees. Open and close like a clamshell. Targets glute medius directly — essential before hip thrusts."},
-      {name:"Hip 90/90 Stretch",reps:"60 sec each side",note:"Sit on floor with both legs at 90°. Lean into the front hip. Opens the hip flexors and external rotators before loading."},
+      {name:"Banded Clamshell",reps:"2 × 15 reps each side",note:"Lie on side, band above knees. Targets glute medius directly — essential before hip thrusts."},
+      {name:"Hip 90/90 Stretch",reps:"60 sec each side",note:"Sit on floor with both legs at 90°. Opens the hip flexors and external rotators before loading."},
       {name:"Glute Bridge — Bodyweight",reps:"2 × 12 reps",note:"Feet flat, drive hips up, squeeze hard at top. Primes the posterior chain pattern."},
     ],
     exercises:[
-      {name:"Barbell Hip Thrust",type:"Compound",sets:4,reps:"10 reps",rest:REST.compound,note:"Second hip thrust session — aim heavier than Monday by Week 3.",key:true},
-      {name:"Romanian Deadlift",type:"Compound",sets:3,reps:"10 reps",rest:REST.compound,note:"Push hips back as far as possible before lowering bar."},
-      {name:"DB Bulgarian Split Squat",type:"Superset A",sets:3,reps:"10 reps/leg",rest:REST.accessory,note:"Lean VERY far forward from the hips — this is essential for glute loading. Back knee drives down to the floor, not out into a wide lunge. Keep the back leg close behind you so there's a strong vertical drop. Drive your chin DOWN toward your chest — this cue is critical: it creates posterior chain tension and fires the glute far harder. Feel every rep deep in the glute, not in the quad or front knee."},
-      {name:"Dumbbell Step Up",type:"Superset B",sets:3,reps:"10 reps/leg",rest:REST.accessory,note:"Use a plate under the soft box if needed to get a solid surface for your foot. Lean FORWARD as you step up — almost into a low lunge position as the rear leg trails behind you on the floor. Stay stable and grounded; do not swing or bounce up. Full glute activation means pressing through the heel of the elevated foot. Keep your chin DOWN — same cue as split squat — it locks in the posterior chain and ensures the glute is doing the work."},
-      {name:"Cable Glute Kickback",type:"Accessory",sets:3,reps:"12 reps/leg",rest:REST.accessory,note:"Slow and controlled. Feel the glute — not your lower back."},
-      {name:"Stairmaster",type:"Cardio",sets:1,reps:"15 min",rest:REST.cardio,note:"Leaning forward slightly activates glutes more.",cardio:true},
+      {name:"Hip Thrust Machine",type:"Compound",sets:4,reps:"10 reps",rest:REST.compound,note:"Same weight as Monday — match and progress together. Both sessions move up together.",key:true},
+      {name:"RDL — Staggered Stance",type:"Compound",sets:3,reps:"10 reps/leg",rest:REST.compound,note:"Single leg bias — more glute isolation than bilateral. Start 30–35kg — hit 12 reps to add 2.5kg."},
+      {name:"DB Bulgarian Split Squat",type:"Compound",sets:3,reps:"10 reps/leg",rest:REST.compound,note:"Rear foot elevated, drive through front heel. Start 10kg DBs — hit 12 reps to move to 12.5kg DBs."},
+      {name:"Cable Glute Kickback",type:"Accessory",sets:3,reps:"12 reps/leg",rest:REST.accessory,note:"Light weight only — burnout finisher, mind-muscle. Full extension and squeeze every rep. Do not ego load."},
+      {name:"Hollow Body Hold",type:"Core",sets:3,reps:"30 sec",rest:REST.circuit,note:"Lower back flat on floor — arms and legs extended. Progress to 45 sec when 30 is controlled."},
     ]},
-    thu:{ name:"Thursday", focus:"Push — Chest, Shoulders & Triceps",
+    sat:{ name:"Saturday", focus:"Glutes & Core",
+    warmup:[
+      {name:"Banded Glute Bridge",reps:"2 × 15 reps",note:"Glute activation before heavy hip thrusts — especially important at end of week."},
+      {name:"Hip Flexor Stretch",reps:"60 sec each side",note:"Kneeling lunge, tuck pelvis, push forward. Releases hip flexors so glutes fire fully."},
+      {name:"Leg Swing",reps:"10 reps each leg",note:"Hold a wall for balance. Swing each leg through full range. Lubricates the hip joint."},
+    ],
+    exercises:[
+      {name:"Hip Thrust Machine",type:"Compound",sets:3,reps:"8 reps",rest:REST.compound,note:"Slightly heavier than Mon/Wed — strength stimulus end of week. Hit 10 reps all 3 sets to add 5kg.",key:true},
+      {name:"Hyperextension",type:"Accessory",sets:4,reps:"10 reps",rest:REST.accessory,note:"2 sec hold at top. Bodyweight first — add weight plate at chest when BW 12 reps is easy."},
+      {name:"Dumbbell Sumo Squat",type:"Accessory",sets:3,reps:"10 reps",rest:REST.accessory,note:"Wide stance, toes out — sit back, glute dominant. Start 20–25kg DB. Hit 12 reps → next DB weight."},
+      {name:"Machine Hip Extension",type:"Accessory",sets:3,reps:"12 reps",rest:REST.accessory,note:"Full extension — squeeze and hold 1 sec at top. Hit 15 reps easily → add weight."},
+      {name:"Stomach Vacuum",type:"Core",sets:3,reps:"45 sec",rest:REST.circuit,note:"Draw navel to spine — hold and breathe normally through nose. Progress to 60 sec hold."},
+    ]},
+    sun:{ name:"Sunday", focus:"Chest, Shoulders & Triceps",
     warmup:[
       {name:"Shoulder Circles",reps:"30 sec each direction",note:"Full range. Loosens the shoulder joint before pressing."},
-      {name:"Chest Stretch — Doorframe",reps:"2 × 20 sec each side",note:"Arm at 90° on a wall or frame, lean through. Opens the chest and anterior shoulder capsule before bench work."},
-      {name:"Light DB Press — Warm-up Set",reps:"1 × 15 reps (very light)",note:"Use the lightest DBs available. Just to prime the pressing pattern before loading up."},
+      {name:"Chest Stretch — Doorframe",reps:"2 × 20 sec each side",note:"Opens chest and anterior shoulder capsule before bench work."},
+      {name:"Light DB Press",reps:"1 × 15 reps (very light)",note:"Use the lightest DBs. Primes the pressing pattern before loading up."},
     ],
     exercises:[
-      {name:"Machine Chest Press",type:"Compound",sets:3,reps:"10 reps",rest:REST.compound,note:"Control the eccentric — 2 seconds down."},
-      {name:"Dumbbell Bench Press",type:"Compound",sets:3,reps:"10 reps",rest:REST.compound,note:"Elbows at 45° to body, full chest stretch at bottom. Second compound — do this while chest is fresh."},
-      {name:"Seated Arnold Press",type:"Compound",sets:3,reps:"10 reps",rest:REST.compound,note:"Rotate palms as you press up. Full range of motion."},
-      {name:"Dumbbell Lateral Raise",type:"Accessory",sets:3,reps:"12 reps",rest:REST.accessory,note:"Slight forward lean. Lead with elbows. Light weight — form matters."},
-      {name:"Cable V-Bar Tricep Extension",type:"Accessory",sets:3,reps:"10 reps",rest:REST.accessory,note:"Elbows pinned to sides. Full extension at bottom."},
-      {name:"Pallof Press",type:"Circuit A",sets:3,reps:"10 reps/side",rest:REST.circuit,note:"Anti-rotation hold — resist the cable pulling you sideways. 2 sec hold extended. Builds oblique definition without adding width to the waist."},
-      {name:"Hollow Body Hold",type:"Circuit B",sets:3,reps:"25 sec",rest:REST.circuit,note:"Lie on back. Press lower back completely flat. Arms overhead, legs straight at 30-45°. Maintain a slight C-curve — the whole anterior core works as one unit. This is what creates the deep midline groove."},
-      {name:"Reverse Crunch",type:"Circuit C",sets:3,reps:"15 reps",rest:REST.circuit,note:"Lie flat, hands under lower back. Draw knees to chest, then curl hips off the floor. Slow lower — 3 sec. Targets lower abs directly — the hardest area to define. No swinging."},
-    ]},
-    fri:{ name:"Friday", focus:"Glutes & Cardio",
-    warmup:[
-      {name:"Banded Glute Bridge",reps:"2 × 15 reps",note:"Same as Monday. Always prime the glutes before hip thrusts — especially at end of week when fatigue is higher."},
-      {name:"Hip Flexor Stretch",reps:"60 sec each side",note:"Kneeling lunge position. Tuck pelvis under and push hips forward. Releases the hip flexors so glutes can fire fully."},
-      {name:"Leg Swing",reps:"10 reps each leg, forward & lateral",note:"Hold a wall for balance. Swing each leg freely through full range. Lubricates the hip joint."},
-    ],
-    exercises:[
-      {name:"Barbell Hip Thrust",type:"Compound",sets:4,reps:"8 reps",rest:REST.compound,note:"Third hip thrust session. Push for a new weight by Week 3.",key:true,changed:true},
-      {name:"Romanian Deadlift",type:"Compound",sets:3,reps:"10 reps",rest:REST.compound,note:"Focus on the stretch — pause 1 sec at the bottom.",changed:true},
-      {name:"Cable Glute Kickback",type:"Accessory",sets:3,reps:"12 reps/leg",rest:REST.accessory,note:"Second kickback session. Squeeze at peak contraction.",changed:true},
-      {name:"Hyperextension",type:"Accessory",sets:3,reps:"10 reps",rest:REST.accessory,note:"Controlled — don't hyperextend the lower back."},
-      {name:"Cable Crunch",type:"Circuit A",sets:3,reps:"12 reps",rest:REST.circuit,note:"Kneel at cable, rope at top. Round your spine — this is spinal flexion not a hip hinge. Elbows to thighs, 1 sec squeeze. Build weight progressively every week."},
-      {name:"Hollow Body Hold",type:"Circuit B",sets:3,reps:"25 sec",rest:REST.circuit,note:"Arms overhead, legs straight at 30-45°. Lower back flat. The whole anterior core fires as one — this is the exercise that creates the deep midline definition."},
-      {name:"Stomach Vacuum",type:"Circuit C",sets:3,reps:"30 sec",rest:REST.circuit,note:"Stand or kneel. Exhale ALL air. Draw navel up and back toward your spine — not sucking in with outer muscles but a deep internal hollowing. Hold 30 sec. This is the single most effective exercise for reducing waist circumference and building the internal corset."},
-      {name:"Stairmaster",type:"Cardio",sets:1,reps:"25 min",rest:REST.cardio,note:"End of week — push the pace slightly.",cardio:true},
-    ]},
-  },
-  2: {
-    mon:{ name:"Monday", focus:"Glutes & Quads",
-    warmup:[
-      {name:"Banded Glute Bridge",reps:"2 × 15 reps",note:"Phase 2 — use a heavier band than Phase 1. Glute activation before the heaviest hip thrust session of the programme."},
-      {name:"Hip 90/90 Stretch",reps:"60 sec each side",note:"Sit on floor, both legs at 90°. Lean into the front hip. Opens the hip capsule before loading."},
-      {name:"Bodyweight Box Squat",reps:"2 × 8 reps",note:"Sit back slowly onto the box, stand up. Primes the squat pattern with no load."},
-    ],
-    exercises:[
-      {name:"Barbell Hip Thrust",type:"Compound",sets:4,reps:"8 reps",rest:REST.compound,note:"Lead with your strongest lift. Push heavier than Week 4.",key:true,changed:true},
-      {name:"Leg Press",type:"Compound",sets:4,reps:"8 reps",rest:REST.compound,note:"Full depth — heels mid-platform. Don't lock knees at top."},
-      {name:"Box Squat",type:"Compound",sets:3,reps:"10 reps",rest:REST.compound,note:"Sit back onto box, brief pause then drive up."},
-      {name:"DB Walking Lunge",type:"Superset A",sets:3,reps:"12 reps/leg",rest:REST.accessory,note:"Long stride for glute emphasis. Keep torso upright."},
-      {name:"DB Goblet Squat",type:"Superset B",sets:3,reps:"10 reps",rest:REST.accessory,note:"Elbows inside knees at bottom. Deep as possible."},
-      {name:"Banded Glute Bridge",type:"Superset A",sets:4,reps:"15 reps",rest:REST.accessory,note:"Band just above knees — push out against it throughout."},
-      {name:"Alt Lying Heel Touches",type:"Superset B",sets:4,reps:"30 reps",rest:REST.circuit,note:"Keep lower back flat. Small controlled movement."},
-      {name:"Weighted Crunch",type:"Superset C",sets:4,reps:"20 reps",rest:REST.circuit,note:"Plate at chest. Chin off chest, exhale at top."},
-      {name:"Treadmill Power Walk",type:"Cardio",sets:1,reps:"10 min",rest:REST.cardio,note:"Incline 8–10%. Hands off rails.",cardio:true},
-    ]},
-    tue:{ name:"Tuesday", focus:"Back, Biceps & Core",
-    warmup:[
-      {name:"Arm Circles",reps:"30 sec each direction",note:"Full range. Warm up the shoulder capsule before heavy pulling."},
-      {name:"Band Pull-Apart",reps:"2 × 15 reps",note:"Light band at chest. Activates rear delts and rotator cuff — especially important before pull-ups."},
-      {name:"Dead Hang",reps:"2 × 20 sec",note:"Just hang from the pull-up bar. Decompresses the spine and activates grip before pulling work."},
-    ],
-    exercises:[
-      {name:"Pull Up",type:"Compound",sets:3,reps:"Max reps",rest:REST.compound,note:"Use assisted machine if needed. Full hang to chin over bar.",key:true},
-      {name:"Barbell Bent Over Row",type:"Compound",sets:3,reps:"10 reps",rest:REST.compound,note:"Hinge to ~45°. Pull bar to belly button. Squeeze lats."},
-      {name:"Reverse Close Grip Cable Pulldown",type:"Accessory",sets:3,reps:"12 reps",rest:REST.accessory,note:"Palms facing you. Elbows drive down and back."},
-      {name:"One Arm DB Bent Over Row",type:"Accessory",sets:3,reps:"8 reps/arm",rest:REST.accessory,note:"Support on bench. Pull elbow to ceiling."},
-      {name:"DB Rear Delt Fly",type:"Accessory",sets:3,reps:"12 reps",rest:REST.accessory,note:"Hinge forward, slight elbow bend. Light weight.",changed:true},
-      {name:"EZ Bar Bicep Curl",type:"Accessory",sets:4,reps:"8–10 reps",rest:REST.accessory,note:"Full extension at bottom. Don't swing."},
-      {name:"Hip Raise Plank",type:"Straight Set",sets:3,reps:"45 sec",rest:REST.circuit,note:"Phase 2 — pause 1 sec at the top of each pike. On the mat. Drive hips high, exhale at peak. Core fires harder in Phase 2."},
-      {name:"Dead Bug — Breathing",type:"Straight Set",sets:3,reps:"45 sec",rest:REST.circuit,note:"Stay on the mat. Exhale fully, draw navel to spine, extend opposite arm and leg — 5 sec count. Lower back flat. The TVA corset activation."},
-      {name:"Stomach Vacuum",type:"Straight Set",sets:3,reps:"40 sec",rest:REST.circuit,note:"Still on the mat or kneeling. Exhale all air, draw navel to spine. Phase 2 addition — practice the internal corset here while core is activated."},
-      {name:"Cable Crunch",type:"Straight Set",sets:3,reps:"15 reps",rest:REST.circuit,note:"Now move to the cable station. Phase 2 — go heavier than Phase 1. Round the spine hard, elbows to thighs, hold 1 sec at bottom."},
-      {name:"Stairmaster",type:"Cardio",sets:1,reps:"15 min",rest:REST.cardio,note:"Steady pace. Lean slightly forward.",cardio:true},
-    ]},
-    wed:{ name:"Wednesday", focus:"Glutes & Hamstrings",
-    warmup:[
-      {name:"Banded Clamshell",reps:"2 × 15 reps each side",note:"Phase 2 — heavier band. Glute medius activation before the heaviest hip thrust of the week."},
-      {name:"Hip Flexor Stretch",reps:"60 sec each side",note:"Kneeling lunge, tuck pelvis, push forward. Releases hip flexors so glutes fire fully — critical before staggered RDL."},
-      {name:"Glute Bridge — Bodyweight",reps:"2 × 12 reps",note:"Full drive at top, 2 sec hold. Primes the posterior chain."},
-    ],
-    exercises:[
-      {name:"Barbell Hip Thrust",type:"Superset A",sets:3,reps:"8 reps",rest:REST.compound,note:"Heaviest hip thrust of the week. Load it up.",key:true},
-      {name:"Hip Thrust Pulse",type:"Superset B",sets:3,reps:"10 pulses",rest:REST.accessory,note:"Immediately after main thrust. Short range at top. Burns."},
-      {name:"RDL — Staggered Stance",type:"Compound",sets:3,reps:"10 reps/leg",rest:REST.compound,note:"Rear foot slightly back. Much more glute med activation."},
-      {name:"Seated Leg Curl",type:"Accessory",sets:4,reps:"8 reps",rest:REST.accessory,note:"Full stretch at top. Slow eccentric — 3 sec down."},
-      {name:"Machine Hip Abduction",type:"Superset A",sets:4,reps:"10 reps",rest:REST.accessory,note:"Push out against the machine. Squeeze outer glutes at full range."},
-      {name:"Cable Pull-Through",type:"Superset B",sets:4,reps:"12 reps",rest:REST.accessory,note:"Face away from cable, rope between legs. Hinge at hips, drive through glutes to stand tall. One of the best posterior chain exercises for glute size — feels like an RDL but with constant cable tension through the full range.",changed:true},
-      {name:"Cable Crunch",type:"Circuit A",sets:4,reps:"15 reps",rest:REST.circuit,note:"Phase 2 — go heavier than Phase 1. 4 sets. This is weighted ab training — the only way to build visible definition. Round the spine hard, hold 1 sec at bottom."},
-      {name:"Stomach Vacuum",type:"Circuit B",sets:4,reps:"45 sec",rest:REST.circuit,note:"Phase 2 target: hold 45 sec unbroken. Exhale fully, draw navel to spine, breathe shallowly through nose. The transverse abdominis corset effect becomes visible around week 6-8 of consistent practice."},
-      {name:"Treadmill Power Walk",type:"Cardio",sets:1,reps:"10 min",rest:REST.cardio,note:"Incline 8–10%.",cardio:true},
-    ]},
-    thu:{ name:"Thursday", focus:"Push — Chest, Shoulders & Triceps",
-    warmup:[
-      {name:"Shoulder Circles",reps:"30 sec each direction",note:"Full range both ways. Phase 2 pressing is heavier — take the warm-up seriously."},
-      {name:"Band Pull-Apart",reps:"2 × 15 reps",note:"Rear delt and rotator cuff activation. Keeps shoulders healthy under heavier DB press load."},
-      {name:"Light DB Press — Warm-up Set",reps:"1 × 15 reps (very light)",note:"Primes the pressing pattern. Use the lightest DBs available."},
-    ],
-    exercises:[
-      {name:"Dumbbell Bench Press",type:"Compound",sets:4,reps:"8 reps",rest:REST.compound,note:"Elbows at 45°. Touch chest, full press. Main push compound.",key:true},
-      {name:"Standing DB Shoulder Press",type:"Superset A",sets:3,reps:"10 reps",rest:REST.compound,note:"Standing = more core demand. Control the descent."},
-      {name:"Two Arm DB Tricep Extension",type:"Superset B",sets:3,reps:"10 reps",rest:REST.accessory,note:"Elbows stay pointing at ceiling. Full extension."},
-      {name:"Machine Fly",type:"Superset A",sets:3,reps:"10 reps",rest:REST.accessory,note:"Feel the stretch in the chest. Don't slam the weight."},
-      {name:"Machine Rear Delt Fly",type:"Superset B",sets:3,reps:"10 reps",rest:REST.accessory,note:"Arms almost straight. Lead with elbows back."},
-      {name:"Cable V-Bar Tricep Extension",type:"Accessory",sets:3,reps:"12 reps",rest:REST.accessory,note:"Elbows fixed. Fully extend at bottom."},
-      {name:"Chair Leg Raise",type:"Accessory",sets:3,reps:"10–15 reps",rest:REST.accessory,note:"Lower legs slowly. Don't swing. Exhale on the raise."},
-      {name:"Stairmaster",type:"Cardio",sets:1,reps:"15 min",rest:REST.cardio,note:"Consistent pace throughout.",cardio:true},
-    ]},
-    fri:{ name:"Friday", focus:"Glutes, Core & Cardio",
-    warmup:[
-      {name:"Banded Glute Bridge",reps:"2 × 15 reps",note:"End of week — glutes need extra priming when fatigued. Don't skip this."},
-      {name:"Hip Flexor Stretch",reps:"60 sec each side",note:"Tight hip flexors inhibit glutes. Release them before Bulgarian split squats especially."},
-      {name:"Leg Swing",reps:"10 reps each leg, forward & lateral",note:"Lubricates the hip joint. Essential before split squat depth work."},
-    ],
-    exercises:[
-      {name:"Barbell Hip Thrust",type:"Compound",sets:3,reps:"8 reps",rest:REST.compound,note:"Third hip thrust session. Maintain load from Wednesday.",key:true,changed:true},
-      {name:"DB Bulgarian Split Squat",type:"Dropset",sets:3,reps:"8 + drop",rest:REST.compound,note:"Lean VERY far forward from the hips — this is essential for glute loading, not quad. Back knee drives down to the floor with the back leg kept close behind you (not splayed wide into a runner's lunge). Chin DOWN toward your chest — this cue fires the glute significantly harder by creating posterior chain tension through the neck and spine. Feel every rep deep in the glute. Heaviest set first, then drop ~20% for the burnout set immediately after."},
-      {name:"Dumbbell Sumo Squat",type:"Superset A",sets:3,reps:"10 reps",rest:REST.accessory,note:"Toes out ~45°. Sit deep. Feel inner thigh + glute."},
-      {name:"Hyperextension",type:"Superset B",sets:3,reps:"10 reps",rest:REST.accessory,note:"Controlled. Slight glute squeeze at top."},
-      {name:"Cable Glute Kickback",type:"Accessory",sets:3,reps:"10 reps/leg",rest:REST.accessory,note:"Third kickback session. Increase cable weight from earlier in the week."},
-      {name:"Pallof Press",type:"Circuit A",sets:3,reps:"12 reps/side",rest:REST.circuit,note:"Phase 2 — increase cable weight. Anti-rotation builds oblique definition without width. 2 sec hold at full extension each rep."},
-      {name:"Hollow Body Hold",type:"Circuit B",sets:3,reps:"35 sec",rest:REST.circuit,note:"Phase 2 target: 35 sec. Arms overhead, legs lower than Phase 1 (closer to floor). The deeper the C-curve the more the anterior chain fires. This is the gymnastic foundation of midline definition."},
-      {name:"Stomach Vacuum",type:"Circuit C",sets:3,reps:"45 sec",rest:REST.circuit,note:"End every session with this. The combination of post-workout practice and morning fasted vacuums accelerates neuromuscular adaptation. By week 8 this should feel completely natural."},
-      {name:"Stairmaster",type:"Cardio",sets:1,reps:"20 min",rest:REST.cardio,note:"End of week — longest session. Push your pace.",cardio:true},
+      {name:"Dumbbell Bench Press",type:"Compound",sets:4,reps:"8 reps",rest:REST.compound,note:"Full range — controlled eccentric, 2 sec down. Start 12–15kg DBs — hit 10 reps all 4 sets to move to next DB weight.",key:true},
+      {name:"Seated Arnold Press",type:"Compound",sets:3,reps:"10 reps",rest:REST.compound,note:"Seated for full shoulder development. Rotate palms as you press up. Start 7–8kg DBs — hit 12 reps all 3 sets to add 1kg each side."},
+      {name:"Cable V-Bar Tricep Extension",type:"Accessory",sets:3,reps:"10 reps",rest:REST.accessory,note:"Full extension — squeeze hard at bottom. Hit 12 reps to add weight."},
+      {name:"Cable Face Pull",type:"Accessory",sets:3,reps:"12 reps",rest:REST.accessory,note:"Rear delt + rotator cuff health — never ego load. Pull to forehead, thumbs back. Keep light always."},
+      {name:"Pallof Press",type:"Core",sets:3,reps:"10 reps/side",rest:REST.circuit,note:"Anti-rotation core — resist the cable, don't pull it. Light cable, waist protection not loading."},
+      {name:"Incline Treadmill Walk",type:"Cardio",sets:1,reps:"20 min",rest:REST.cardio,note:"Zone 3 · 15% incline · 5.5–6.0 km/h · After lifting. Finish the week strong.",cardio:true},
     ]},
   }
 };
 
-const DAY_KEYS = ['mon','tue','wed','thu','fri'];
+const DAY_KEYS = ['mon','tue','wed','sat','sun'];
 const MEALS = [
   {name:"Breakfast",color:"#f9b8c4",kcal:460,foods:["3 eggs + 2 egg whites, scrambled","100g oats with berries"],macros:"P: 35g · C: 55g · F: 12g"},
   {name:"Lunch",color:"#b8d9c8",kcal:450,foods:["180g chicken breast (grilled)","150g cooked rice · large salad · 1 tsp olive oil"],macros:"P: 42g · C: 50g · F: 10g"},
@@ -1393,6 +1292,15 @@ async function loadFromSupabase() {
       targetsData.forEach(t => {
         appState.targets[t.exercise] = { w: t.target_weight, note: t.note };
       });
+      // Insert any new exercises added to DEFAULT_TARGETS that aren't yet in Supabase
+      const existingNames = new Set(targetsData.map(t => t.exercise));
+      const missing = DEFAULT_TARGETS.filter(t => !existingNames.has(t.exercise));
+      if (missing.length > 0) {
+        await sb.from('exercise_targets').insert(missing);
+        missing.forEach(t => {
+          appState.targets[t.exercise] = { w: t.target_weight, note: t.note };
+        });
+      }
     }
 
     // Start date
@@ -1575,8 +1483,7 @@ function renderHome() {
 }
 
 function getNextSession(history, todayKey) {
-  const weeksIn = Math.ceil((Date.now() - appState.startDate) / (7 * 24 * 3600 * 1000));
-  const phase = weeksIn > 4 ? 2 : 1;
+  const phase = 1;
   if (DAY_KEYS.includes(todayKey)) {
     const alreadyDoneToday = history.some(h => {
       const hDate = new Date(h.ts);
@@ -1619,7 +1526,7 @@ function renderSmartBanner(session, history) {
         <div class="session-focus">${day.focus}</div>
         <div class="session-meta">
           <span class="chip chip-rose">${day.exercises.filter(e => !e.cardio).length} exercises</span>
-          <span class="chip chip-sage">Wks ${session.phase === 1 ? '1–4' : '5–8'}</span>
+          <span class="chip chip-sage">Your Programme</span>
           ${day.exercises.filter(e => e.cardio).length > 0 ? '<span class="chip chip-sky">+ cardio</span>' : ''}
         </div>
         <div class="session-exercises-preview">${previewExs}${day.exercises.filter(e => !e.cardio).length > 4 ? ' …' : ''}</div>
@@ -1722,6 +1629,11 @@ function timedMode(ex) {
 // The DEFAULT_TARGETS constant is the source of truth used only for seeding.
 // At runtime getTarget() reads from appState.targets which is loaded from Supabase.
 const DEFAULT_TARGETS = [
+  // New programme — key lifts
+  { exercise: "Hip Thrust Machine",              target_weight: "90–95kg",        note: "Week 8 target per the programme. Start 70kg — add 5kg each time you hit 12 reps across all sets. Mon/Wed same weight, Sat slightly heavier." },
+  { exercise: "Wide Grip Pulldown",              target_weight: "52.5kg",         note: "Week 8 target. Start 35–40kg — add 5kg when you hit 12 reps across all 4 sets." },
+  { exercise: "Machine Hip Extension",           target_weight: "moderate",       note: "Full extension, squeeze and hold 1 sec. Add weight when 15 reps feels easy." },
+  { exercise: "Incline Treadmill Walk",          target_weight: "6.0–6.5 km/h",  note: "15% incline always. Speed is how you progress — aim to walk faster in zone 3 as fitness builds." },
   // Barbell compounds
   { exercise: "Barbell Hip Thrust",            target_weight: "70–90kg plates", note: "You're using a plate-loaded hip thrust machine — the lever arm means each kg loaded feels ~15–20% harder than barbell. 70–90kg on the machine = equivalent to 100–120kg barbell. Start where you are and add 5kg per week." },
   { exercise: "Squat",                         target_weight: "70–80kg",        note: "Advanced female squat ~1.2× bodyweight. 70kg is strong and achievable." },
@@ -1800,8 +1712,7 @@ function getTarget(name) {
 }
 
 function renderLogSelectors() {
-  document.getElementById('log-phase-sel').innerHTML = [1, 2].map(p =>
-    `<div class="sel-chip ${logPhase === p ? 'active' : ''}" onclick="setLogPhase(${p})">${p === 1 ? 'Weeks 1–4' : 'Weeks 5–8'}</div>`).join('');
+  document.getElementById('log-phase-sel').innerHTML = `<div class="sel-chip active">Your Programme</div>`;
   const todayKey = ['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
   document.getElementById('log-day-sel').innerHTML = DAY_KEYS.map(k => {
     const isToday = k === todayKey;
@@ -2500,7 +2411,7 @@ function emailSummary() {
   });
 
   // Top PBs overall
-  const KEY_LIFTS = ['Barbell Hip Thrust','Romanian Deadlift','Squat','DB Bulgarian Split Squat','Wide Grip Pull Down','Dumbbell Bench Press'];
+  const KEY_LIFTS = ['Hip Thrust Machine','Romanian Deadlift','Squat','DB Bulgarian Split Squat','Wide Grip Pulldown','Dumbbell Bench Press'];
   const pbSummary = KEY_LIFTS
     .filter(l => appState.pbs[l])
     .map(l => `  • ${l}: ${appState.pbs[l].w}kg × ${appState.pbs[l].r} reps`)
@@ -2512,7 +2423,7 @@ function emailSummary() {
 `ALICIAFIT SESSION SUMMARY
 ──────────────────────────────
 ${dateStr}
-Week ${totalWeeks} of 8 · Phase ${entry.phase === 1 ? '1 (Weeks 1–4)' : '2 (Weeks 5–8)'}
+Week ${totalWeeks}
 ${day.name} — ${day.focus}
 
 SESSION STATS
@@ -2556,7 +2467,7 @@ function emailFullHistory() {
   const totalWeeks = Math.max(1, Math.ceil((Date.now() - appState.startDate) / (7 * 24 * 3600 * 1000)));
 
   // Personal bests with targets
-  const KEY_LIFTS = ['Barbell Hip Thrust','Romanian Deadlift','Squat','DB Bulgarian Split Squat','Wide Grip Pull Down','Dumbbell Bench Press','Pull Up','Cable Glute Kickback'];
+  const KEY_LIFTS = ['Hip Thrust Machine','Romanian Deadlift','Squat','DB Bulgarian Split Squat','Wide Grip Pulldown','Dumbbell Bench Press','Seated Arnold Press','Cable Glute Kickback'];
   const pbLines = KEY_LIFTS.map(l => {
     const pb  = pbs[l];
     const tgt = TARGETS[l];
@@ -2837,7 +2748,7 @@ async function saveMetrics() {
 
 function renderProgress() {
   // ── Personal Bests ──────────────────────────────────
-  const KEY_LIFTS = ['Barbell Hip Thrust','Romanian Deadlift','Squat','DB Bulgarian Split Squat','Wide Grip Pull Down','Dumbbell Bench Press','Pull Up','Cable Glute Kickback'];
+  const KEY_LIFTS = ['Hip Thrust Machine','Romanian Deadlift','Squat','DB Bulgarian Split Squat','Wide Grip Pulldown','Dumbbell Bench Press','Seated Arnold Press','Cable Glute Kickback'];
   const pbs = appState.pbs || {};
   document.getElementById('pb-grid').innerHTML = KEY_LIFTS.map(l => {
     const tgt = getTarget(l);
@@ -2977,8 +2888,7 @@ let pendingModifiedWorkout = null; // stores parsed modified workout ready to lo
 
 function getTodaySession() {
   const todayKey = ['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
-  const weeksIn = Math.ceil((Date.now() - (appState.startDate || Date.now())) / (7*24*3600*1000));
-  const phase = weeksIn > 4 ? 2 : 1;
+  const phase = 1;
   if (DAY_KEYS.includes(todayKey)) {
     return { phase, dayKey: todayKey, day: PROGRAM[phase][todayKey] };
   }
@@ -3411,7 +3321,7 @@ window.sendCoachMessage = sendCoachMessage;
   (function() {
     const todayKey = ['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
     const weeksIn = Math.max(1, Math.ceil((Date.now() - appState.startDate) / (7 * 24 * 3600 * 1000)));
-    logPhase = weeksIn > 4 ? 2 : 1;
+    logPhase = 1;
     logDay = DAY_KEYS.includes(todayKey) ? todayKey : DAY_KEYS[0];
   })();
   renderHome();
