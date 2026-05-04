@@ -1275,6 +1275,14 @@ async function loadFromSupabase() {
     (pbsData || []).forEach(p => {
       appState.pbs[p.exercise] = { w: p.weight, r: p.reps };
     });
+    // Migrate old exercise names to new names
+    const PB_RENAMES = { 'Barbell Hip Thrust': 'Hip Thrust' };
+    for (const [oldName, newName] of Object.entries(PB_RENAMES)) {
+      if (appState.pbs[oldName] && !appState.pbs[newName]) {
+        appState.pbs[newName] = appState.pbs[oldName];
+        await sb.from('personal_bests').upsert({ exercise: newName, weight: appState.pbs[newName].w, reps: appState.pbs[newName].r }, { onConflict: 'exercise' });
+      }
+    }
 
     // Exercise targets — seed on first deploy if table is empty
     if (!targetsData || targetsData.length === 0) {
