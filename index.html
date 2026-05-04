@@ -2470,7 +2470,7 @@ function emailFullHistory() {
   const KEY_LIFTS = ['Hip Thrust Machine','Romanian Deadlift','Squat','DB Bulgarian Split Squat','Wide Grip Pulldown','Dumbbell Bench Press','Seated Arnold Press','Cable Glute Kickback'];
   const pbLines = KEY_LIFTS.map(l => {
     const pb  = pbs[l];
-    const tgt = TARGETS[l];
+    const tgt = appState.targets[l];
     const pbStr  = pb  ? `${pb.w}kg × ${pb.r} reps` : 'Not logged yet';
     const tgtStr = tgt ? `Target: ${tgt.w}` : '';
     return `  • ${l}: ${pbStr}${tgtStr ? `  [${tgtStr}]` : ''}`;
@@ -2490,7 +2490,7 @@ function emailFullHistory() {
       });
       Object.entries(byEx).forEach(([name, sets]) => {
         const detail = sets.map(s => s.w ? `${s.w}kg×${s.r}` : s.r ? `${s.r}s` : '—').join(', ');
-        const tgt = TARGETS[name];
+        const tgt = appState.targets[name];
         const tgtNote = tgt ? ` [target: ${tgt.w}]` : '';
         lines.push(`  • ${name}: ${detail}${tgtNote}`);
       });
