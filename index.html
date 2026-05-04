@@ -197,6 +197,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 .day-pill { width:42px; height:42px; border-radius:var(--r-sm); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; background:var(--paper); color:var(--ink3); border:1px solid var(--border); }
 .day-pill.today-pill { background:var(--rose-bg); color:var(--rose-dk); border-color:var(--rose); }
 .day-pill.done-pill  { background:var(--sage-bg);  color:var(--sage-dk);  border-color:var(--sage); }
+.day-pill.rest-pill  { background:var(--sky-bg);   color:var(--sky-dk);   border-color:var(--sky); }
 .day-card-hd .dname { font-size:15px; font-weight:600; }
 .day-card-hd .dfocus { font-size:12px; color:var(--ink3); margin-top:1px; }
 .day-card-hd .dchev { margin-left:auto; color:var(--ink3); transition:transform 0.2s; flex-shrink:0; }
@@ -1098,7 +1099,7 @@ const PROGRAM = {
       {name:"Standing Alt DB Bicep Curl",type:"Accessory",sets:3,reps:"12 reps",rest:REST.accessory,note:"Slow eccentric — 2 seconds down. Start 8–10kg DBs. 14 reps easy → move to next DB weight."},
       {name:"Hip Raise Plank",type:"Core",sets:3,reps:"45 sec",rest:REST.circuit,note:"Forearm plank. Drive hips up into a pike, pause 1 sec, lower back to plank. Slow and controlled — no momentum. Progress to 60 sec."},
       {name:"Dead Bug — Breathing",type:"Core",sets:3,reps:"45 sec",rest:REST.circuit,note:"Exhale fully, lower back flat on every rep. Extend opposite arm and leg slowly — 5 sec count. Progress to 60 sec when controlled."},
-      {name:"Incline Treadmill Walk",type:"Cardio",sets:1,reps:"20 min",rest:REST.cardio,note:"Zone 3 · 15% incline · 5.5–6.0 km/h · After lifting. Legs fresh from back session — push the pace.",cardio:true},
+      {name:"Incline Treadmill Walk",type:"Cardio",sets:1,reps:"20 min",rest:REST.cardio,note:"Zone 3 · 15% incline · 5.5–6.0 km/h · After lifting. Legs fresh from back session — push the pace.",cardio:true,cardioDetails:{duration:"20 min",equipment:"Treadmill",incline:"15%",speed:"5.5–6.0 km/h",zone:3,zoneRange:"70–80% max HR",zoneNote:"Zone 3 — aerobic conditioning. You're breathless but can speak in short sentences. After lifting your HR is already elevated — hold the pace and stay in zone for the full 20 minutes."}},
     ]},
     wed:{ name:"Wednesday", focus:"Glutes & Hamstrings",
     warmup:[
@@ -1138,12 +1139,20 @@ const PROGRAM = {
       {name:"Cable V-Bar Tricep Extension",type:"Accessory",sets:3,reps:"10 reps",rest:REST.accessory,note:"Full extension — squeeze hard at bottom. Hit 12 reps to add weight."},
       {name:"Cable Face Pull",type:"Accessory",sets:3,reps:"12 reps",rest:REST.accessory,note:"Rear delt + rotator cuff health — never ego load. Pull to forehead, thumbs back. Keep light always."},
       {name:"Pallof Press",type:"Core",sets:3,reps:"10 reps/side",rest:REST.circuit,note:"Anti-rotation core — resist the cable, don't pull it. Light cable, waist protection not loading."},
-      {name:"Incline Treadmill Walk",type:"Cardio",sets:1,reps:"20 min",rest:REST.cardio,note:"Zone 3 · 15% incline · 5.5–6.0 km/h · After lifting. Finish the week strong.",cardio:true},
+      {name:"Incline Treadmill Walk",type:"Cardio",sets:1,reps:"20 min",rest:REST.cardio,note:"Zone 3 · 15% incline · 5.5–6.0 km/h · After lifting. Finish the week strong.",cardio:true,cardioDetails:{duration:"20 min",equipment:"Treadmill",incline:"15%",speed:"5.5–6.0 km/h",zone:3,zoneRange:"70–80% max HR",zoneNote:"Zone 3 — aerobic conditioning. You're breathless but can speak in short sentences. Finish the week strong — hold the zone for the full 20 minutes."}},
     ]},
+    thu:{ name:"Thursday", focus:"Cardio", cardioOnly:true,
+    warmup:[],
+    exercises:[
+      {name:"Incline Treadmill Walk",type:"Cardio",sets:1,reps:"35 min",rest:REST.cardio,note:"Zone 2 · 10–12% incline · 5.5–6.0 km/h · Steady-state LISS. Conversational pace — if breathless, reduce incline or speed.",cardio:true,cardioDetails:{duration:"35 min",equipment:"Treadmill",incline:"10–12%",speed:"5.5–6.0 km/h",zone:2,zoneRange:"60–70% max HR",zoneNote:"Zone 2 — fat burning, aerobic base. You can hold a full conversation. If you're breathless, reduce the incline. This is a recovery-friendly session — long and easy wins."}},
+      {name:"Cross Trainer",type:"Cardio",sets:1,reps:"35 min",rest:REST.cardio,note:"Zone 2 · Level 8–10 resistance · Moderate cadence · Alternative to treadmill on cardio day.",cardio:true,cardioDetails:{duration:"35 min",equipment:"Cross Trainer",difficulty:"Level 8–10",zone:2,zoneRange:"60–70% max HR",zoneNote:"Zone 2 — fat burning, aerobic base. Steady, comfortable effort — you can hold a full conversation. Maintain smooth consistent strides for the full 35 minutes."}},
+    ]},
+    fri:{ name:"Friday", focus:"Rest & Recovery", isRest:true, warmup:[], exercises:[] },
   }
 };
 
-const DAY_KEYS = ['mon','tue','wed','sat','sun'];
+const DAY_KEYS = ['mon','tue','wed','thu'];
+const PROG_VIEW_KEYS = ['mon','tue','wed','thu','fri'];
 const MEALS = [
   {name:"Breakfast",color:"#f9b8c4",kcal:398,foods:["150ml skim milk","30g whey protein","20g rolled oats","10g chia seeds","45g Greek yoghurt 0%","25g blueberries","5g walnuts","5g creatine · 5g collagen · psyllium husk"],macros:"P: 43.5g · C: 34g · F: 10.6g"},
   {name:"Lunch",color:"#b8d9c8",kcal:449,foods:["2 medium boiled eggs","25g Red Sacla pesto","75g butter beans","200g Greek yoghurt 0%","30g tomato · 30g cabbage · 30g capsicum","Omega 3 capsules · multivitamins"],macros:"P: 37.5g · C: 26.1g · F: 20.6g"},
@@ -1566,11 +1575,19 @@ function renderSmartBanner(session, history) {
   if (!session) { wrap.innerHTML = ''; return; }
   const day = PROGRAM[session.phase][session.dayKey];
   const lastSame = history.filter(h => h.dayKey === session.dayKey).slice(-1)[0];
-  const previewExs = day.exercises.filter(e => !e.cardio).slice(0, 4).map(e => e.name).join(' · ');
+  const cardioOnly = !!day.cardioOnly;
+  const strengthExs = day.exercises.filter(e => !e.cardio);
+  const previewExs = strengthExs.slice(0, 4).map(e => e.name).join(' · ');
   const isToday = session.isToday;
   const label = isToday ? "Today's Session" : `Next Session — ${day.name}`;
   const daysLabel = (!isToday && session.daysAway > 1) ? `in ${session.daysAway} days` : (!isToday ? 'tomorrow' : '');
   const lastStr = lastSame ? `Last logged: ${new Date(lastSame.ts).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} · ${Math.round(lastSame.vol || 0)}kg total volume` : 'First time logging this session';
+  const metaChips = cardioOnly
+    ? `<span class="chip chip-sky">Cardio Day</span><span class="chip chip-sage">Your Programme</span>`
+    : `<span class="chip chip-rose">${strengthExs.length} exercises</span><span class="chip chip-sage">Your Programme</span>${day.exercises.filter(e => e.cardio).length > 0 ? '<span class="chip chip-sky">+ cardio</span>' : ''}`;
+  const previewContent = cardioOnly
+    ? `<div class="session-exercises-preview" style="color:var(--sky-dk);">Treadmill or Cross Trainer · ${day.exercises[0]?.cardioDetails?.duration || '35 min'} · Zone ${day.exercises[0]?.cardioDetails?.zone || 2}</div>`
+    : `<div class="session-exercises-preview">${previewExs}${strengthExs.length > 4 ? ' …' : ''}</div>`;
   wrap.innerHTML = `
     <div class="session-card">
       <div class="session-card-body">
@@ -1580,12 +1597,8 @@ function renderSmartBanner(session, history) {
         </div>
         <div class="session-day-name">${day.name}</div>
         <div class="session-focus">${day.focus}</div>
-        <div class="session-meta">
-          <span class="chip chip-rose">${day.exercises.filter(e => !e.cardio).length} exercises</span>
-          <span class="chip chip-sage">Your Programme</span>
-          ${day.exercises.filter(e => e.cardio).length > 0 ? '<span class="chip chip-sky">+ cardio</span>' : ''}
-        </div>
-        <div class="session-exercises-preview">${previewExs}${day.exercises.filter(e => !e.cardio).length > 4 ? ' …' : ''}</div>
+        <div class="session-meta">${metaChips}</div>
+        ${previewContent}
         <div style="font-size:12px;color:var(--ink3);margin-bottom:14px;display:flex;align-items:center;gap:6px;">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
           ${lastStr}
@@ -1612,55 +1625,130 @@ function selectPhase(p, el) {
   renderProgram();
 }
 
+function renderCardioBlock(ex) {
+  const cd = ex.cardioDetails;
+  if (!cd) {
+    return `
+      <div class="prog-ex-row" style="border-top:1px solid var(--sky);background:var(--sky-bg);">
+        <div class="prog-ex-info">
+          <div class="prog-ex-name">${ex.name}</div>
+          <div class="prog-ex-note">${ex.note}</div>
+          <div class="prog-ex-tags"><span class="chip chip-sky">Cardio</span></div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div class="prog-ex-sets">${ex.sets}×${ex.reps}</div>
+        </div>
+      </div>`;
+  }
+  const isCrossTrainer = cd.equipment === 'Cross Trainer';
+  const metric1Label = isCrossTrainer ? 'Difficulty' : 'Incline';
+  const metric1Value = isCrossTrainer ? cd.difficulty : cd.incline;
+  const metric2Label = 'Speed';
+  const metric2Value = isCrossTrainer ? '—' : cd.speed;
+  return `
+    <div style="border-top:1px solid var(--sky);background:var(--sky-bg);padding:12px 16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="chip chip-sky">Cardio</span>
+          <span style="font-size:13px;font-weight:600;color:var(--ink);">${ex.name}</span>
+        </div>
+        <span style="font-family:'DM Mono',monospace;font-size:15px;font-weight:500;color:var(--sky-dk);">${cd.duration}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;">
+        <div style="background:var(--white);border:1px solid var(--sky);border-radius:var(--r-sm);padding:8px 4px;text-align:center;">
+          <div style="font-size:9px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:var(--sky-dk);margin-bottom:4px;">${metric1Label}</div>
+          <div style="font-family:'DM Mono',monospace;font-size:11px;font-weight:500;color:var(--ink);">${metric1Value}</div>
+        </div>
+        <div style="background:var(--white);border:1px solid var(--sky);border-radius:var(--r-sm);padding:8px 4px;text-align:center;">
+          <div style="font-size:9px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:var(--sky-dk);margin-bottom:4px;">${metric2Label}</div>
+          <div style="font-family:'DM Mono',monospace;font-size:11px;font-weight:500;color:var(--ink);">${metric2Value}</div>
+        </div>
+        <div style="background:var(--white);border:1px solid var(--sky);border-radius:var(--r-sm);padding:8px 4px;text-align:center;">
+          <div style="font-size:9px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:var(--sky-dk);margin-bottom:4px;">Zone</div>
+          <div style="font-family:'DM Mono',monospace;font-size:13px;font-weight:600;color:var(--sky-dk);">${cd.zone}</div>
+        </div>
+        <div style="background:var(--white);border:1px solid var(--sky);border-radius:var(--r-sm);padding:8px 4px;text-align:center;">
+          <div style="font-size:9px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:var(--sky-dk);margin-bottom:4px;">HR Range</div>
+          <div style="font-family:'DM Mono',monospace;font-size:10px;font-weight:500;color:var(--ink);">${cd.zoneRange}</div>
+        </div>
+      </div>
+      <div style="font-size:11.5px;color:var(--sky-dk);font-style:italic;line-height:1.5;background:var(--white);border:1px solid var(--sky);border-radius:var(--r-sm);padding:8px 10px;">${cd.zoneNote}</div>
+    </div>`;
+}
+
 function renderProgram() {
   const history = appState.workoutHistory;
   const todayKey = ['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
   const list = document.getElementById('prog-days');
-  list.innerHTML = DAY_KEYS.map(k => {
+  list.innerHTML = PROG_VIEW_KEYS.map(k => {
     const day = PROGRAM[progPhase][k];
     const isToday = k === todayKey;
-    const done = history.some(h => h.dayKey === k && h.phase === progPhase);
+    const isRest = !!day.isRest;
+    const done = !isRest && history.some(h => h.dayKey === k && h.phase === progPhase);
+    const pillClass = isRest ? 'rest-pill' : isToday ? 'today-pill' : done ? 'done-pill' : '';
+
+    if (isRest) {
+      return `
+        <div class="day-card" id="dc-${k}">
+          <div class="day-card-hd" style="cursor:default;">
+            <div class="day-pill rest-pill">${day.name.slice(0, 3).toUpperCase()}</div>
+            <div style="flex:1"><div class="dname">${day.name}</div><div class="dfocus">${day.focus}</div></div>
+            <span class="chip chip-sky" style="flex-shrink:0;">Rest</span>
+          </div>
+        </div>`;
+    }
+
+    const cardioOnly = !!day.cardioOnly;
+
     return `
       <div class="day-card" id="dc-${k}">
         <div class="day-card-hd" onclick="toggleDayCard('${k}')" style="cursor:pointer;">
-          <div class="day-pill ${isToday ? 'today-pill' : done ? 'done-pill' : ''}">${day.name.slice(0, 3).toUpperCase()}</div>
+          <div class="day-pill ${pillClass}">${day.name.slice(0, 3).toUpperCase()}</div>
           <div style="flex:1"><div class="dname">${day.name}</div><div class="dfocus">${day.focus}</div></div>
           <svg class="dchev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
         </div>
         <div class="day-exs">
-          <div style="padding:10px 16px 6px;border-top:1px solid var(--border);background:var(--lemon-bg);">
-            <div style="font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--lemon-dk);margin-bottom:8px;">🔥 Warm-Up</div>
-            ${(day.warmup||[]).map(w => `
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px;">
-              <div>
-                <div style="font-size:12.5px;font-weight:500;color:var(--ink);">${w.name}</div>
-                <div style="font-size:11px;color:var(--ink3);margin-top:2px;font-style:italic;">${w.note}</div>
-              </div>
-              <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--lemon-dk);flex-shrink:0;margin-top:2px;text-align:right;">${w.reps}</div>
-            </div>`).join('')}
-          </div>
-          ${day.exercises.map(ex => {
-            const tgt = getTarget(ex.name);
-            return `
-            <div class="prog-ex-row">
-              <div class="prog-ex-info">
-                <div class="prog-ex-name">${ex.name}</div>
-                <div class="prog-ex-note">${ex.note}</div>
-                <div class="prog-ex-tags">
-                  ${ex.key ? '<span class="chip chip-rose">Key lift</span>' : ''}
-                  ${ex.changed ? '<span class="chip chip-lemon">Updated</span>' : ''}
-                  ${ex.cardio ? '<span class="chip chip-sky">Cardio</span>' : ''}
-                  ${ex.type.includes('Superset') || ex.type.includes('Circuit') ? `<span class="chip chip-mauve">${ex.type}</span>` : ''}
+          ${cardioOnly ? `
+            <div style="padding:10px 16px 8px;border-top:1px solid var(--sky);background:var(--sky-bg);">
+              <div style="font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--sky-dk);margin-bottom:3px;">Choose One Machine</div>
+              <div style="font-size:11px;color:var(--sky-dk);opacity:0.8;">Pick whichever is available at the gym today</div>
+            </div>
+            ${day.exercises.map(ex => renderCardioBlock(ex)).join('')}
+          ` : `
+            <div style="padding:10px 16px 6px;border-top:1px solid var(--border);background:var(--lemon-bg);">
+              <div style="font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--lemon-dk);margin-bottom:8px;">🔥 Warm-Up</div>
+              ${(day.warmup||[]).map(w => `
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px;">
+                <div>
+                  <div style="font-size:12.5px;font-weight:500;color:var(--ink);">${w.name}</div>
+                  <div style="font-size:11px;color:var(--ink3);margin-top:2px;font-style:italic;">${w.note}</div>
                 </div>
-              </div>
-              <div style="text-align:right;flex-shrink:0;">
-                <div class="prog-ex-sets">${ex.sets}×${ex.reps}</div>
-                ${tgt ? `<div style="font-size:10px;color:var(--lemon-dk);margin-top:3px;font-family:'DM Mono',monospace;white-space:nowrap;">↑ ${tgt.w}</div>` : ''}
-              </div>
-            </div>`;
-          }).join('')}
+                <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--lemon-dk);flex-shrink:0;margin-top:2px;text-align:right;">${w.reps}</div>
+              </div>`).join('')}
+            </div>
+            ${day.exercises.map(ex => {
+              if (ex.cardio) return renderCardioBlock(ex);
+              const tgt = getTarget(ex.name);
+              return `
+              <div class="prog-ex-row">
+                <div class="prog-ex-info">
+                  <div class="prog-ex-name">${ex.name}</div>
+                  <div class="prog-ex-note">${ex.note}</div>
+                  <div class="prog-ex-tags">
+                    ${ex.key ? '<span class="chip chip-rose">Key lift</span>' : ''}
+                    ${ex.changed ? '<span class="chip chip-lemon">Updated</span>' : ''}
+                    ${ex.type.includes('Superset') || ex.type.includes('Circuit') ? `<span class="chip chip-mauve">${ex.type}</span>` : ''}
+                  </div>
+                </div>
+                <div style="text-align:right;flex-shrink:0;">
+                  <div class="prog-ex-sets">${ex.sets}×${ex.reps}</div>
+                  ${tgt ? `<div style="font-size:10px;color:var(--lemon-dk);margin-top:3px;font-family:'DM Mono',monospace;white-space:nowrap;">↑ ${tgt.w}</div>` : ''}
+                </div>
+              </div>`;
+            }).join('')}
+          `}
           <div style="padding:12px 16px">
-            <button class="btn-primary btn-outline btn-sm" data-golog-day="${k}" data-golog-phase="${progPhase}">Log this session</button>
+            <button class="btn-primary btn-outline btn-sm" data-golog-day="${k}" data-golog-phase="${progPhase}">${cardioOnly ? 'Log cardio' : 'Log this session'}</button>
           </div>
         </div>
       </div>`;
