@@ -1232,7 +1232,7 @@ async function loadFromSupabase() {
 
     const [{ data: workouts }, { data: foods }, { data: metricsData }, { data: pbsData }, { data: targetsData }] =
       await Promise.all([
-        sb.from('workouts').select('*').order('ts', { ascending: true }),
+        sb.from('workouts').select('*').eq('archived', false).order('ts', { ascending: true }),
         sb.from('food_log').select('*').order('created_at', { ascending: true }),
         sb.from('metrics').select('*').order('ts', { ascending: true }),
         sb.from('personal_bests').select('*'),
