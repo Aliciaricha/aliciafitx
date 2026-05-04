@@ -1032,7 +1032,7 @@ const PROGRAM = {
       {name:"Bodyweight Squat",reps:"2 × 10 reps",note:"Slow and deep. Feel the hips open. Primes the squat pattern."},
     ],
     exercises:[
-      {name:"Hip Thrust Machine",type:"Compound",sets:4,reps:"10 reps",rest:REST.compound,note:"Priority lift — always first, every glute day. Drive through heels, squeeze hard at top for 1 sec. Start 70kg — hit 12 reps all 4 sets to add 5kg.",key:true},
+      {name:"Hip Thrust",type:"Compound",sets:4,reps:"10 reps",rest:REST.compound,note:"Priority lift — always first, every glute day. Drive through heels, squeeze hard at top for 1 sec. Start 70kg — hit 12 reps all 4 sets to add 5kg.",key:true},
       {name:"Squat",type:"Compound",sets:3,reps:"8 reps",rest:REST.compound,note:"Goblet or hack — no barbell back squat. Chest up, knees track over toes. Start 42.5kg — hit 10 reps all 3 sets to add 2.5kg."},
       {name:"Romanian Deadlift",type:"Compound",sets:3,reps:"10 reps",rest:REST.compound,note:"Hip hinge — feel hamstrings load throughout. Push hips back before lowering bar. Start 40kg — hit 12 reps all 3 sets to add 2.5kg."},
       {name:"Machine Hip Abduction",type:"Accessory",sets:3,reps:"12 reps",rest:REST.accessory,note:"Squeeze at full range — mind-muscle focus. Slow eccentric. Hit 15 reps easily → add one plate."},
@@ -1045,7 +1045,7 @@ const PROGRAM = {
       {name:"Cat-Cow",reps:"10 slow reps",note:"On all fours. Arch and round the spine fully. Mobilises the thoracic spine for all the rowing ahead."},
     ],
     exercises:[
-      {name:"Wide Grip Pulldown",type:"Compound",sets:4,reps:"10 reps",rest:REST.compound,note:"Full stretch at top, squeeze lats at bottom. Start 35–40kg — hit 12 reps all 4 sets to add 5kg.",key:true},
+      {name:"Wide Grip Pull Down",type:"Compound",sets:4,reps:"10 reps",rest:REST.compound,note:"Full stretch at top, squeeze lats at bottom. Start 35–40kg — hit 12 reps all 4 sets to add 5kg.",key:true},
       {name:"Machine Row",type:"Compound",sets:3,reps:"10 reps",rest:REST.compound,note:"Elbows close to body — full retraction at top. Hit 12 reps all 3 sets to add weight."},
       {name:"Standing Alt DB Bicep Curl",type:"Accessory",sets:3,reps:"12 reps",rest:REST.accessory,note:"Slow eccentric — 2 seconds down. Start 8–10kg DBs. 14 reps easy → move to next DB weight."},
       {name:"Hip Raise Plank",type:"Core",sets:3,reps:"45 sec",rest:REST.circuit,note:"Forearm plank. Drive hips up into a pike, pause 1 sec, lower back to plank. Slow and controlled — no momentum. Progress to 60 sec."},
@@ -1059,7 +1059,7 @@ const PROGRAM = {
       {name:"Glute Bridge — Bodyweight",reps:"2 × 12 reps",note:"Feet flat, drive hips up, squeeze hard at top. Primes the posterior chain pattern."},
     ],
     exercises:[
-      {name:"Hip Thrust Machine",type:"Compound",sets:4,reps:"10 reps",rest:REST.compound,note:"Same weight as Monday — match and progress together. Both sessions move up together.",key:true},
+      {name:"Hip Thrust",type:"Compound",sets:4,reps:"10 reps",rest:REST.compound,note:"Same weight as Monday — match and progress together. Both sessions move up together.",key:true},
       {name:"RDL — Staggered Stance",type:"Compound",sets:3,reps:"10 reps/leg",rest:REST.compound,note:"Single leg bias — more glute isolation than bilateral. Start 30–35kg — hit 12 reps to add 2.5kg."},
       {name:"DB Bulgarian Split Squat",type:"Compound",sets:3,reps:"10 reps/leg",rest:REST.compound,note:"Rear foot elevated, drive through front heel. Start 10kg DBs — hit 12 reps to move to 12.5kg DBs."},
       {name:"Cable Glute Kickback",type:"Accessory",sets:3,reps:"12 reps/leg",rest:REST.accessory,note:"Light weight only — burnout finisher, mind-muscle. Full extension and squeeze every rep. Do not ego load."},
@@ -1072,7 +1072,7 @@ const PROGRAM = {
       {name:"Leg Swing",reps:"10 reps each leg",note:"Hold a wall for balance. Swing each leg through full range. Lubricates the hip joint."},
     ],
     exercises:[
-      {name:"Hip Thrust Machine",type:"Compound",sets:3,reps:"8 reps",rest:REST.compound,note:"Slightly heavier than Mon/Wed — strength stimulus end of week. Hit 10 reps all 3 sets to add 5kg.",key:true},
+      {name:"Hip Thrust",type:"Compound",sets:3,reps:"8 reps",rest:REST.compound,note:"Slightly heavier than Mon/Wed — strength stimulus end of week. Hit 10 reps all 3 sets to add 5kg.",key:true},
       {name:"Hyperextension",type:"Accessory",sets:4,reps:"10 reps",rest:REST.accessory,note:"2 sec hold at top. Bodyweight first — add weight plate at chest when BW 12 reps is easy."},
       {name:"Dumbbell Sumo Squat",type:"Accessory",sets:3,reps:"10 reps",rest:REST.accessory,note:"Wide stance, toes out — sit back, glute dominant. Start 20–25kg DB. Hit 12 reps → next DB weight."},
       {name:"Machine Hip Extension",type:"Accessory",sets:3,reps:"12 reps",rest:REST.accessory,note:"Full extension — squeeze and hold 1 sec at top. Hit 15 reps easily → add weight."},
@@ -1630,8 +1630,8 @@ function timedMode(ex) {
 // At runtime getTarget() reads from appState.targets which is loaded from Supabase.
 const DEFAULT_TARGETS = [
   // New programme — key lifts
-  { exercise: "Hip Thrust Machine",              target_weight: "90–95kg",        note: "Week 8 target per the programme. Start 70kg — add 5kg each time you hit 12 reps across all sets. Mon/Wed same weight, Sat slightly heavier." },
-  { exercise: "Wide Grip Pulldown",              target_weight: "52.5kg",         note: "Week 8 target. Start 35–40kg — add 5kg when you hit 12 reps across all 4 sets." },
+  { exercise: "Hip Thrust",              target_weight: "90–95kg",        note: "Week 8 target per the programme. Start 70kg — add 5kg each time you hit 12 reps across all sets. Mon/Wed same weight, Sat slightly heavier." },
+  { exercise: "Wide Grip Pull Down",              target_weight: "52.5kg",         note: "Week 8 target. Start 35–40kg — add 5kg when you hit 12 reps across all 4 sets." },
   { exercise: "Machine Hip Extension",           target_weight: "moderate",       note: "Full extension, squeeze and hold 1 sec. Add weight when 15 reps feels easy." },
   { exercise: "Incline Treadmill Walk",          target_weight: "6.0–6.5 km/h",  note: "15% incline always. Speed is how you progress — aim to walk faster in zone 3 as fitness builds." },
   // Barbell compounds
@@ -2411,7 +2411,7 @@ function emailSummary() {
   });
 
   // Top PBs overall
-  const KEY_LIFTS = ['Hip Thrust Machine','Romanian Deadlift','Squat','DB Bulgarian Split Squat','Wide Grip Pulldown','Dumbbell Bench Press'];
+  const KEY_LIFTS = ['Hip Thrust','Romanian Deadlift','Squat','DB Bulgarian Split Squat','Wide Grip Pull Down','Dumbbell Bench Press'];
   const pbSummary = KEY_LIFTS
     .filter(l => appState.pbs[l])
     .map(l => `  • ${l}: ${appState.pbs[l].w}kg × ${appState.pbs[l].r} reps`)
@@ -2467,7 +2467,7 @@ function emailFullHistory() {
   const totalWeeks = Math.max(1, Math.ceil((Date.now() - appState.startDate) / (7 * 24 * 3600 * 1000)));
 
   // Personal bests with targets
-  const KEY_LIFTS = ['Hip Thrust Machine','Romanian Deadlift','Squat','DB Bulgarian Split Squat','Wide Grip Pulldown','Dumbbell Bench Press','Seated Arnold Press','Cable Glute Kickback'];
+  const KEY_LIFTS = ['Hip Thrust','Romanian Deadlift','Squat','DB Bulgarian Split Squat','Wide Grip Pull Down','Dumbbell Bench Press','Seated Arnold Press','Cable Glute Kickback'];
   const pbLines = KEY_LIFTS.map(l => {
     const pb  = pbs[l];
     const tgt = appState.targets[l];
@@ -2748,7 +2748,7 @@ async function saveMetrics() {
 
 function renderProgress() {
   // ── Personal Bests ──────────────────────────────────
-  const KEY_LIFTS = ['Hip Thrust Machine','Romanian Deadlift','Squat','DB Bulgarian Split Squat','Wide Grip Pulldown','Dumbbell Bench Press','Seated Arnold Press','Cable Glute Kickback'];
+  const KEY_LIFTS = ['Hip Thrust','Romanian Deadlift','Squat','DB Bulgarian Split Squat','Wide Grip Pull Down','Dumbbell Bench Press','Seated Arnold Press','Cable Glute Kickback'];
   const pbs = appState.pbs || {};
   document.getElementById('pb-grid').innerHTML = KEY_LIFTS.map(l => {
     const tgt = getTarget(l);
