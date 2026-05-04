@@ -14,9 +14,9 @@
 /* ── TOKENS ─────────────────────────────────────────────────────── */
 :root {
   --white:   #ffffff;
-  --ink:     #18162a;
-  --ink2:    #3c3856;
-  --ink3:    #9490ae;
+  --ink:     #111111;
+  --ink2:    #3a3a3a;
+  --ink3:    #a0a0a0;
 
   /* Glass surfaces */
   --glass:        rgba(255,255,255,0.68);
@@ -65,16 +65,16 @@
   --r-pill: 100px;
 
   /* Shadows — cool-tinted, layered */
-  --shadow-sm: 0 2px 14px rgba(80,100,200,0.08), 0 1px 3px rgba(80,100,200,0.05);
-  --shadow:    0 8px 32px rgba(80,100,200,0.11), 0 2px 8px rgba(80,100,200,0.07);
-  --shadow-lg: 0 20px 60px rgba(80,100,200,0.15), 0 4px 16px rgba(80,100,200,0.09);
+  --shadow-sm: 0 2px 12px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.04);
+  --shadow:    0 8px 28px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.05);
+  --shadow-lg: 0 16px 48px rgba(0,0,0,0.10), 0 4px 16px rgba(0,0,0,0.06);
 }
 
 /* ── RESET & BASE ────────────────────────────────────────────────── */
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 body {
   font-family: 'DM Sans', sans-serif;
-  background: linear-gradient(145deg, #f6f7ff 0%, #fdf4f8 38%, #f4f8fe 72%, #f8f6ff 100%);
+  background: linear-gradient(160deg, #ffffff 0%, #fafafa 45%, #f7f8f9 100%);
   background-attachment: fixed;
   color: var(--ink);
   min-height: 100vh;
@@ -207,9 +207,17 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 }
 .btn-primary:active { opacity:0.85; transform:scale(0.99); }
 .btn-rose {
-  background:var(--rose-mid); color:var(--rose-dk);
-  border:1.5px solid rgba(255,194,212,0.6);
-  backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+  background: linear-gradient(160deg, rgba(255,215,228,0.70) 0%, rgba(238,158,185,0.58) 100%);
+  color: var(--rose-dk);
+  border: 1px solid rgba(255,225,235,0.75);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  box-shadow:
+    0 8px 28px rgba(196,79,114,0.18),
+    0 2px 8px rgba(196,79,114,0.10),
+    inset 0 1px 0 rgba(255,255,255,0.55),
+    inset 0 -1px 0 rgba(196,79,114,0.08);
+  font-weight: 600;
 }
 .btn-sage {
   background:var(--sage-mid); color:var(--sage-dk);
@@ -256,7 +264,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
   -webkit-backdrop-filter:blur(24px) saturate(180%);
   border:1px solid var(--glass-border); border-radius:var(--r);
 }
-.session-tag { display:inline-flex; align-items:center; gap:5px; font-size:10.5px; font-weight:700; letter-spacing:1.3px; text-transform:uppercase; color:var(--rose-dk); margin-bottom:12px; }
+.session-tag { display:inline-flex; align-items:center; gap:5px; font-size:10.5px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--ink3); margin-bottom:12px; }
 .session-tag svg { width:12px; height:12px; }
 .session-day-name { font-family:'Cormorant Garamond', serif; font-size:34px; font-weight:700; line-height:1; color:var(--ink); margin-bottom:4px; }
 .session-focus { font-size:14px; color:var(--ink2); margin-bottom:18px; }
@@ -706,9 +714,6 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
     <div>
       <div class="home-greeting serif" id="home-greeting">Good morning</div>
       <div class="home-date" id="home-date"></div>
-    </div>
-    <div class="btn-icon" onclick="showPage('progress', document.querySelectorAll(\'.nav-btn\')[4])">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
     </div>
   </div>
   <div id="smart-session-wrap"></div>
@@ -1813,8 +1818,8 @@ function renderSmartBanner(session, history) {
   const daysLabel = (!isToday && session.daysAway > 1) ? `in ${session.daysAway} days` : (!isToday ? 'tomorrow' : '');
   const lastStr = lastSame ? `Last logged: ${new Date(lastSame.ts).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} · ${Math.round(lastSame.vol || 0)}kg total volume` : 'First time logging this session';
   const metaChips = cardioOnly
-    ? `<span class="chip chip-sky">Cardio Day</span><span class="chip chip-sage">Your Programme</span>`
-    : `<span class="chip chip-rose">${strengthExs.length} exercises</span><span class="chip chip-sage">Your Programme</span>${day.exercises.filter(e => e.cardio).length > 0 ? '<span class="chip chip-sky">+ cardio</span>' : ''}`;
+    ? `<span class="chip chip-sky">Cardio Day</span>`
+    : `<span class="chip chip-rose">${strengthExs.length} exercises</span>${day.exercises.filter(e => e.cardio).length > 0 ? '<span class="chip chip-sky">+ cardio</span>' : ''}`;
   const previewContent = cardioOnly
     ? `<div class="session-exercises-preview" style="color:var(--sky-dk);">Treadmill or Cross Trainer · ${day.exercises[0]?.cardioDetails?.duration || '35 min'} · Zone ${day.exercises[0]?.cardioDetails?.zone || 2}</div>`
     : `<div class="session-exercises-preview">${previewExs}${strengthExs.length > 4 ? ' …' : ''}</div>`;
