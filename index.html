@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#fafaf8">
 <title>ALICIAFIT</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=EB+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 /* ── TOKENS ─────────────────────────────────────────────────────── */
@@ -17,6 +17,7 @@
   --bg:      #F2F2F7;
   --ink:     #1c1c1e;
   --ink2:    #3a3a3c;
+  --charcoal: #3d3b38;
   --ink3:    #8e8e93;
 
   /* Liquid Glass — iOS 26 */
@@ -167,7 +168,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 .nav-btn.active .nav-dot { opacity:1; }
 
 /* ── TYPOGRAPHY ──────────────────────────────────────────────────── */
-.serif { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif; }
+.serif { font-family: 'EB Garamond', Georgia, 'Times New Roman', serif; color: var(--charcoal); }
 .mono  { font-family:'DM Mono', monospace; }
 
 /* ── LAYOUT ──────────────────────────────────────────────────────── */
@@ -267,7 +268,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 
 /* ═══ HOME ═══════════════════════════════════════════════════════ */
 .home-header { padding:60px 22px 8px; display:flex; align-items:flex-start; justify-content:space-between; }
-.home-greeting { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif; font-size:42px; font-weight:700; letter-spacing:-1px; line-height:1.0; color:var(--ink); }
+.home-greeting { font-family: 'EB Garamond', Georgia, serif; font-size:44px; font-weight:700; letter-spacing:-0.5px; line-height:1.0; color:var(--charcoal); }
 .home-date { font-size:15px; font-weight:400; color:var(--ink3); margin-top:7px; letter-spacing:-0.2px; }
 .session-card { margin:22px 16px 0; border-radius:var(--r); overflow:hidden; box-shadow:var(--shadow); position:relative; }
 .session-card-body {
@@ -282,7 +283,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 .session-tag { display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--ink3); margin-bottom:16px; }
 .session-tag svg { width:11px; height:11px; }
 .session-tag-sub { font-weight:400; letter-spacing:0; text-transform:none; color:var(--ink3); margin-left:4px; }
-.session-day-name { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif; font-size:36px; font-weight:700; letter-spacing:-0.8px; line-height:1; color:var(--ink); margin-bottom:5px; }
+.session-day-name { font-family: 'EB Garamond', Georgia, serif; font-size:38px; font-weight:700; letter-spacing:-0.3px; line-height:1; color:var(--charcoal); margin-bottom:5px; }
 .session-focus { font-size:15px; font-weight:400; color:var(--ink3); margin-bottom:22px; letter-spacing:-0.1px; }
 .session-meta { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px; }
 .session-exercises-preview { font-size:12px; color:var(--ink3); line-height:1.8; border-top:1px solid var(--border); padding-top:14px; margin-bottom:18px; }
@@ -314,8 +315,8 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 .recent-vol { font-family:'DM Mono', monospace; font-size:13px; color:var(--ink2); }
 
 /* ═══ PROGRAM ════════════════════════════════════════════════════ */
-.prog-header { padding:60px 22px 16px; }
-.prog-header h1 { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif; font-size:40px; font-weight:700; letter-spacing:-0.8px; color:var(--ink); }
+.prog-header { padding:60px 22px 12px; }
+.prog-header h1 { font-size:40px; font-weight:700; letter-spacing:-0.3px; }
 .prog-header p { font-size:14px; color:var(--ink3); margin-top:5px; letter-spacing:-0.1px; }
 .day-card {
   margin:0 16px 8px;
@@ -327,7 +328,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
   overflow: hidden;
   box-shadow: var(--glass-specular), var(--shadow-sm);
 }
-.day-card-hd { display:flex; align-items:center; gap:16px; padding:18px 20px; cursor:pointer; }
+.day-card-hd { display:flex; align-items:center; gap:14px; padding:14px 18px; cursor:pointer; }
 .day-pill {
   width:46px; height:46px; border-radius:var(--r-sm); flex-shrink:0;
   display:flex; align-items:center; justify-content:center;
@@ -344,7 +345,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 .day-card.open .dchev { transform:rotate(90deg); }
 .day-exs { display:none; }
 .day-card.open .day-exs { display:block; }
-.prog-ex-row { display:flex; align-items:flex-start; justify-content:space-between; padding:12px 18px; border-top:1px solid var(--border); gap:10px; }
+.prog-ex-row { display:flex; align-items:center; justify-content:space-between; padding:9px 16px; border-top:1px solid var(--border); gap:10px; }
 .prog-ex-info { flex:1; }
 .prog-ex-name { font-size:13px; font-weight:600; color:var(--ink); }
 .prog-ex-note { font-size:11.5px; color:var(--ink3); margin-top:3px; line-height:1.5; font-style:italic; }
@@ -353,7 +354,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 
 /* ═══ LOG ════════════════════════════════════════════════════════ */
 .log-header { padding:60px 22px 20px; }
-.log-header h1 { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif; font-size:40px; font-weight:700; letter-spacing:-0.8px; color:var(--ink); }
+.log-header h1 { font-size:40px; font-weight:700; letter-spacing:-0.3px; }
 .selector-row { padding:0 16px; margin-bottom:8px; display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
 .selector-lbl { font-size:11px; color:var(--ink3); min-width:36px; text-transform:uppercase; letter-spacing:0.8px; font-weight:500; }
 .sel-chips { display:flex; gap:5px; flex-wrap:wrap; }
@@ -824,10 +825,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
     <h1 class="serif">Program</h1>
     <p>One phase. Keep going. Progress the weight.</p>
   </div>
-  <div style="height:16px"></div>
-  <div class="tabs" id="prog-phase-tabs">
-    <div class="tab active">Your Programme</div>
-  </div>
+  <div style="height:8px"></div>
   <div id="prog-days"></div>
 </div>
 
@@ -845,10 +843,6 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
     </div>
   </div>
   <div style="height:14px"></div>
-  <div class="selector-row">
-    <span class="selector-lbl">Phase</span>
-    <div class="sel-chips" id="log-phase-sel"></div>
-  </div>
   <div class="selector-row" style="margin-bottom:14px;">
     <span class="selector-lbl">Day</span>
     <div class="sel-chips" id="log-day-sel"></div>
@@ -865,7 +859,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 <!-- AI COACH -->
 <div id="page-coach" class="page">
   <div style="padding:60px 22px 18px;border-bottom:0.5px solid var(--border);">
-    <h1 style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',sans-serif;font-size:40px;font-weight:700;letter-spacing:-0.8px;color:var(--ink);">AI Coach</h1>
+    <h1 style="font-family:'EB Garamond',Georgia,serif;font-size:40px;font-weight:700;letter-spacing:-0.3px;color:var(--charcoal);">AI Coach</h1>
     <p style="font-size:14px;color:var(--ink3);margin-top:5px;letter-spacing:-0.1px;">Ask anything about your training</p>
   </div>
 
@@ -1909,7 +1903,6 @@ function renderCardioBlock(ex) {
       <div class="prog-ex-row" style="border-top:1px solid var(--sky);background:var(--sky-bg);">
         <div class="prog-ex-info">
           <div class="prog-ex-name">${ex.name}</div>
-          <div class="prog-ex-note">${ex.note}</div>
           <div class="prog-ex-tags"><span class="chip chip-sky">Cardio</span></div>
         </div>
         <div style="text-align:right;flex-shrink:0;">
@@ -2010,7 +2003,6 @@ function renderProgram() {
               <div class="prog-ex-row">
                 <div class="prog-ex-info">
                   <div class="prog-ex-name">${ex.name}</div>
-                  <div class="prog-ex-note">${ex.note}</div>
                   <div class="prog-ex-tags">
                     ${ex.key ? '<span class="chip chip-rose">Key lift</span>' : ''}
                     ${ex.changed ? '<span class="chip chip-lemon">Updated</span>' : ''}
@@ -2133,7 +2125,6 @@ function getTarget(name) {
 }
 
 function renderLogSelectors() {
-  document.getElementById('log-phase-sel').innerHTML = `<div class="sel-chip active">Your Programme</div>`;
   const todayKey = ['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
   document.getElementById('log-day-sel').innerHTML = DAY_KEYS.map(k => {
     const isToday = k === todayKey;
