@@ -14,23 +14,17 @@
 /* ── TOKENS ─────────────────────────────────────────────────────── */
 :root {
   --white:   #ffffff;
-  --bg:      #F2F2F7;
+  --bg:      #f0f0ee;
   --ink:     #1c1c1e;
   --ink2:    #3a3a3c;
   --charcoal: #2c2b29;
   --ink3:    #8e8e93;
 
-  /* Liquid Glass — iOS 26 */
-  --glass:        rgba(255,255,255,0.72);
-  --glass-heavy:  rgba(255,255,255,0.94);
-  --glass-border: rgba(255,255,255,0.65);
-  --glass-inner:  rgba(255,255,255,0.50);
-  /* Multi-edge specular: bright top, left/right glints, subtle bottom depth */
-  --glass-specular:
-    inset 0 1.5px 0 rgba(255,255,255,1.0),
-    inset 0 -0.5px 0 rgba(0,0,0,0.07),
-    inset 1px 0 0 rgba(255,255,255,0.55),
-    inset -1px 0 0 rgba(255,255,255,0.35);
+  --glass:        #ffffff;
+  --glass-heavy:  #ffffff;
+  --glass-border: rgba(0,0,0,0.08);
+  --glass-inner:  #f5f5f4;
+  --glass-specular: 0 0 0 0 transparent;
 
   /* Accent — pale sky blue */
   --rose:     #daeaf6;
@@ -72,10 +66,9 @@
   --r-xs: 10px;
   --r-pill: 100px;
 
-  /* Shadows — ultra-soft, just depth */
-  --shadow-sm: 0 1px 6px rgba(0,0,0,0.04), 0 0.5px 1px rgba(0,0,0,0.02);
-  --shadow:    0 4px 20px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.03);
-  --shadow-lg: 0 14px 48px rgba(0,0,0,0.10), 0 3px 12px rgba(0,0,0,0.05);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.07);
+  --shadow:    0 2px 8px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
 }
 
 /* ── RESET & BASE ────────────────────────────────────────────────── */
@@ -143,11 +136,11 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 /* ── NAV ─────────────────────────────────────────────────────────── */
 .nav {
   position:fixed; bottom:0; left:0; right:0; z-index:100;
-  background: rgba(242,242,247,0.82);
-  backdrop-filter:blur(60px) saturate(210%) brightness(1.00);
-  -webkit-backdrop-filter:blur(60px) saturate(210%) brightness(1.00);
-  border-top:0.5px solid rgba(60,60,67,0.18);
-  box-shadow: inset 0 0.5px 0 rgba(255,255,255,0.9), 0 -2px 12px rgba(0,0,0,0.04);
+  background: rgba(240,240,238,0.88);
+  backdrop-filter:blur(40px) saturate(180%);
+  -webkit-backdrop-filter:blur(40px) saturate(180%);
+  border-top:1px solid rgba(0,0,0,0.09);
+  box-shadow: 0 -1px 0 rgba(255,255,255,0.8);
   display:flex;
   padding:8px 0 max(12px, env(safe-area-inset-bottom));
 }
@@ -166,6 +159,15 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
   opacity:0; transition:opacity 0.2s;
 }
 .nav-btn.active .nav-dot { opacity:1; }
+
+/* ── NO BLUR ON CARDS ────────────────────────────────────────────── */
+.card, .session-card-body, .day-card, .ex-log-card, .stat-box, .macro-box,
+.cal-card, .food-log-list, .add-food-card, .meal-plan-item, .metric-card,
+.chart-card, .pb-card, .modal-sheet, .tab, .sel-chip, .btn-icon,
+.rest-skip-btn, .chip, .empty-icon {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
 
 /* ── TYPOGRAPHY ──────────────────────────────────────────────────── */
 .serif { font-family: 'EB Garamond', Georgia, 'Times New Roman', serif; color: var(--charcoal); }
@@ -216,22 +218,15 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 }
 .btn-primary:active { opacity:0.82; transform:scale(0.98); }
 .btn-rose {
-  /* iOS 26 tinted-glass primary — translucent blue tint over frosted glass */
-  background: linear-gradient(170deg, rgba(0,122,255,0.16) 0%, rgba(0,100,220,0.10) 100%);
-  color: #0055c4;
-  border: 0.5px solid rgba(0,100,220,0.22);
-  backdrop-filter: blur(60px) saturate(200%);
-  -webkit-backdrop-filter: blur(60px) saturate(200%);
-  box-shadow:
-    inset 0 1.5px 0 rgba(255,255,255,0.95),
-    inset 0 -0.5px 0 rgba(0,0,0,0.06),
-    inset 1px 0 0 rgba(255,255,255,0.4),
-    inset -1px 0 0 rgba(255,255,255,0.3),
-    0 8px 24px rgba(0,80,200,0.10),
-    0 2px 6px rgba(0,80,200,0.07);
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: -0.2px;
+  background: var(--bg);
+  color: var(--charcoal);
+  border: 1px solid rgba(0,0,0,0.13);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: inset 0 0.5px 0 rgba(255,255,255,0.9), 0 1px 3px rgba(0,0,0,0.08);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.1px;
 }
 .btn-sage {
   background:var(--sage-mid); color:var(--sage-dk);
@@ -268,7 +263,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 
 /* ═══ HOME ═══════════════════════════════════════════════════════ */
 .home-header { padding:60px 22px 8px; display:flex; align-items:flex-start; justify-content:space-between; }
-.home-greeting { font-family: 'EB Garamond', Georgia, serif; font-size:44px; font-weight:400; letter-spacing:0.06em; line-height:1.05; color:var(--charcoal); }
+.home-greeting { font-family: 'EB Garamond', Georgia, serif; font-size:44px; font-weight:500; letter-spacing:-0.3px; line-height:1.05; color:var(--charcoal); }
 .home-date { font-size:15px; font-weight:400; color:var(--ink3); margin-top:7px; letter-spacing:-0.2px; }
 .session-card { margin:22px 16px 0; border-radius:var(--r); overflow:hidden; box-shadow:var(--shadow); position:relative; }
 .session-card-body {
@@ -283,7 +278,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 .session-tag { display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--ink3); margin-bottom:16px; }
 .session-tag svg { width:11px; height:11px; }
 .session-tag-sub { font-weight:400; letter-spacing:0; text-transform:none; color:var(--ink3); margin-left:4px; }
-.session-day-name { font-family: 'EB Garamond', Georgia, serif; font-size:38px; font-weight:400; letter-spacing:0.04em; line-height:1.05; color:var(--charcoal); margin-bottom:5px; }
+.session-day-name { font-family: 'EB Garamond', Georgia, serif; font-size:38px; font-weight:500; letter-spacing:-0.2px; line-height:1.05; color:var(--charcoal); margin-bottom:5px; }
 .session-focus { font-size:15px; font-weight:400; color:var(--ink3); margin-bottom:22px; letter-spacing:-0.1px; }
 .session-meta { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px; }
 .session-exercises-preview { font-size:12px; color:var(--ink3); line-height:1.8; border-top:1px solid var(--border); padding-top:14px; margin-bottom:18px; }
@@ -316,7 +311,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 
 /* ═══ PROGRAM ════════════════════════════════════════════════════ */
 .prog-header { padding:60px 22px 12px; }
-.prog-header h1 { font-size:40px; font-weight:400; letter-spacing:0.08em; }
+.prog-header h1 { font-size:40px; font-weight:500; letter-spacing:-0.3px; }
 .prog-header p { font-size:14px; color:var(--ink3); margin-top:5px; letter-spacing:-0.1px; }
 .day-card {
   margin:0 16px 8px;
@@ -354,7 +349,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 
 /* ═══ LOG ════════════════════════════════════════════════════════ */
 .log-header { padding:60px 22px 20px; }
-.log-header h1 { font-size:40px; font-weight:400; letter-spacing:0.08em; }
+.log-header h1 { font-size:40px; font-weight:500; letter-spacing:-0.3px; }
 .selector-row { padding:0 16px; margin-bottom:8px; display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
 .selector-lbl { font-size:11px; color:var(--ink3); min-width:36px; text-transform:uppercase; letter-spacing:0.8px; font-weight:500; }
 .sel-chips { display:flex; gap:5px; flex-wrap:wrap; }
@@ -472,7 +467,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 
 /* ═══ NUTRITION ══════════════════════════════════════════════════ */
 .nut-header { padding:60px 22px 20px; }
-.nut-header h1 { font-size:40px; font-weight:400; letter-spacing:0.08em; }
+.nut-header h1 { font-size:40px; font-weight:500; letter-spacing:-0.3px; }
 .macro-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; padding:0 16px; }
 .macro-box {
   background: var(--glass);
@@ -556,7 +551,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 
 /* ═══ PROGRESS ════════════════════════════════════════════════════ */
 .prog-pg-header { padding:60px 22px 20px; }
-.prog-pg-header h1 { font-size:40px; font-weight:400; letter-spacing:0.08em; }
+.prog-pg-header h1 { font-size:40px; font-weight:500; letter-spacing:-0.3px; }
 .metric-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:0 16px; }
 .metric-card {
   background:var(--glass); border:0.5px solid var(--glass-border);
@@ -600,20 +595,16 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 .modal-overlay { position:fixed; inset:0; z-index:300; background:rgba(24,22,42,0.4); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); display:none; align-items:flex-end; justify-content:center; }
 .modal-overlay.show { display:flex; }
 .modal-sheet {
-  background: rgba(242,242,247,0.92);
-  backdrop-filter: blur(70px) saturate(200%) brightness(1.00);
-  -webkit-backdrop-filter: blur(70px) saturate(200%) brightness(1.00);
-  border-top: 0.5px solid rgba(255,255,255,0.95);
-  border-left: 0.5px solid rgba(255,255,255,0.70);
-  border-right: 0.5px solid rgba(255,255,255,0.70);
-  box-shadow: inset 0 1.5px 0 rgba(255,255,255,1.0), 0 -2px 40px rgba(0,0,0,0.08);
-  border-radius:26px 26px 0 0;
+  background: #ffffff;
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -2px 24px rgba(0,0,0,0.08);
+  border-radius:24px 24px 0 0;
   padding:32px 24px max(32px,env(safe-area-inset-bottom));
   width:100%; max-width:480px;
   animation:sheetUp 0.32s cubic-bezier(0.34,1.56,0.64,1);
 }
 @keyframes sheetUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
-.modal-sheet h2 { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif; font-size:36px; font-weight:700; color:var(--ink); margin-bottom:4px; }
+.modal-sheet h2 { font-family:'EB Garamond',Georgia,serif; font-size:34px; font-weight:500; letter-spacing:-0.2px; color:var(--charcoal); margin-bottom:4px; }
 .modal-sheet .modal-sub { font-size:14px; color:var(--ink3); margin-bottom:20px; }
 .modal-summary { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:22px; }
 .modal-stat {
@@ -859,7 +850,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 <!-- AI COACH -->
 <div id="page-coach" class="page">
   <div style="padding:60px 22px 18px;border-bottom:0.5px solid var(--border);">
-    <h1 style="font-family:'EB Garamond',Georgia,serif;font-size:40px;font-weight:400;letter-spacing:0.08em;color:var(--charcoal);">AI Coach</h1>
+    <h1 style="font-family:'EB Garamond',Georgia,serif;font-size:40px;font-weight:500;letter-spacing:-0.3px;color:var(--charcoal);">AI Coach</h1>
     <p style="font-size:14px;color:var(--ink3);margin-top:5px;letter-spacing:-0.1px;">Ask anything about your training</p>
   </div>
 
@@ -1205,10 +1196,16 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
   <div style="height:10px"></div>
   <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px 8px;">
     <div class="section-label" style="margin:0;padding:0;">Session History</div>
-    <button onclick="emailMonthSummary()" style="display:flex;align-items:center;gap:6px;padding:7px 12px;background:var(--white);border:1px solid var(--border2);border-radius:50px;font-size:12px;font-weight:600;color:var(--ink2);cursor:pointer;">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-      Export
-    </button>
+    <div style="display:flex;gap:8px;">
+      <button onclick="emailMonthSummary()" style="display:flex;align-items:center;gap:6px;padding:7px 14px;background:var(--white);border:1px solid var(--border);border-radius:50px;font-size:12px;font-weight:500;color:var(--charcoal);cursor:pointer;letter-spacing:-0.1px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        Export workouts
+      </button>
+      <button onclick="exportProgramme()" style="display:flex;align-items:center;gap:6px;padding:7px 14px;background:var(--white);border:1px solid var(--border);border-radius:50px;font-size:12px;font-weight:500;color:var(--charcoal);cursor:pointer;letter-spacing:-0.1px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Export programme
+      </button>
+    </div>
   </div>
   <div style="padding:0 16px 4px;font-size:12px;color:var(--ink3);" id="prog-history-count"></div>
   <div id="history-list" style="margin:0 16px;display:flex;flex-direction:column;gap:8px;"></div>
@@ -2861,6 +2858,47 @@ ALICIAFIT`);
 }
 
 /* ═══════════════════════════════════════════════════════
+   EXPORT PROGRAMME
+═══════════════════════════════════════════════════════ */
+function exportProgramme() {
+  const DAY_NAMES = { mon:'Monday', tue:'Tuesday', wed:'Wednesday', thu:'Thursday', fri:'Friday', sat:'Saturday', sun:'Sunday' };
+  const lines = ['ALICIAFIT — Training Programme', '═'.repeat(36), ''];
+
+  PROG_VIEW_KEYS.forEach(k => {
+    const day = PROGRAM[progPhase][k];
+    if (day.isRest) {
+      lines.push(`${DAY_NAMES[k] || day.name}  —  Rest`);
+      lines.push('');
+      return;
+    }
+    lines.push(`${DAY_NAMES[k] || day.name}  —  ${day.focus}`);
+    lines.push('─'.repeat(28));
+
+    if (day.warmup && day.warmup.length) {
+      lines.push('Warm-Up:');
+      day.warmup.forEach(w => lines.push(`  • ${w.name}  ${w.reps}`));
+      lines.push('');
+    }
+
+    day.exercises.forEach(ex => {
+      const tgt = getTarget(ex.name);
+      const tgtStr = tgt ? `  →  Target: ${tgt.w}` : '';
+      if (ex.cardio && ex.cardioDetails) {
+        const cd = ex.cardioDetails;
+        lines.push(`  • ${ex.name}  ${cd.duration}  ${cd.incline || cd.difficulty || ''}  ${cd.speed || ''}`.trim());
+      } else {
+        lines.push(`  • ${ex.name}  ${ex.sets}×${ex.reps}${tgtStr}${ex.key ? '  ★ Key lift' : ''}`);
+      }
+    });
+    lines.push('');
+  });
+
+  const body = lines.join('\n');
+  const subject = 'My Training Programme — AliciaFit';
+  window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
+/* ═══════════════════════════════════════════════════════
    EXPORT FULL HISTORY FOR AI REVIEW
 ═══════════════════════════════════════════════════════ */
 function emailFullHistory() {
@@ -3701,6 +3739,7 @@ window.calNext = calNext;
 window.emailMonthSummary = emailMonthSummary;
 window.emailSummary = emailSummary;
 window.emailFullHistory = emailFullHistory;
+window.exportProgramme = exportProgramme;
 window.showDayType = showDayType;
 window.showNutTab = showNutTab;
 window.addFood = addFood;
