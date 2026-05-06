@@ -357,7 +357,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
   display:flex; align-items:center; justify-content:space-between;
   padding:13px 16px; cursor:pointer;
   border-bottom:1px solid var(--border);
-  background:var(--paper);
+  background:#ffffff;
 }
 .ex-log-hd-done { background:var(--sage-bg) !important; border-bottom-color:var(--sage) !important; }
 .ex-log-title { font-size:14px; font-weight:600; color:var(--charcoal); }
@@ -725,13 +725,10 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
         <div style="width:10px;height:10px;border-radius:50%;background:var(--rose-dk);flex-shrink:0;"></div>Today
       </div>
     </div>
-    <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
-      <button onclick="emailFullHistory()" style="width:100%;padding:13px 16px;border:1.5px solid var(--border2);border-radius:var(--r-sm);background:var(--paper);color:var(--ink2);font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity 0.15s;">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-        EXPORT WORKOUTS
-      </button>
-    </div>
   </div>
+
+  <!-- Progress Stats -->
+  <div id="home-progress-stats"></div>
 
   <!-- AI Coach on Home -->
   <div class="section-label" style="margin-top:24px">AI Coach</div>
@@ -1747,6 +1744,64 @@ function renderHome() {
 
   renderHomeCoach();
   renderCalendar();
+  renderHomeProgress();
+}
+
+function renderHomeProgress() {
+  const pbs = appState.pbs || {};
+  const history = appState.workoutHistory || [];
+
+  const hipPb   = pbs['Hip Thrust'];
+  const pullPb  = pbs['Wide Grip Pull Down'];
+  const benchPb = pbs['Dumbbell Bench Press'];
+  const upperPb = pullPb || benchPb;
+  const upperName = pullPb ? 'Pull Down' : 'Bench';
+  const hipTarget = appState.targets?.['Hip Thrust']?.w;
+
+  const cardioSessions = history.filter(h => ['thu','tue','sun'].includes(h.dayKey)).length;
+  const weeksTrained = appState.startDate
+    ? Math.max(1, Math.ceil((Date.now() - appState.startDate) / (7 * 24 * 3600 * 1000)))
+    : 1;
+
+  const stats = [
+    {
+      colorBg:  'var(--rose-bg)',  colorBd: 'var(--rose-mid)', colorAcc: 'var(--rose-dk)',
+      title: 'Glute Strength',
+      val:   hipPb?.w ? `${hipPb.w}kg` : '—',
+      sub:   hipPb?.w
+        ? `Hip Thrust · ${hipPb.r} reps${hipTarget ? ` · Target: ${hipTarget}` : ''}`
+        : 'Log Hip Thrust to track',
+    },
+    {
+      colorBg:  'var(--sky-bg)',  colorBd: 'var(--sky-mid)', colorAcc: 'var(--sky-dk)',
+      title: 'Upper Body',
+      val:   upperPb?.w ? `${upperPb.w}kg` : '—',
+      sub:   upperPb?.w ? `${upperName} PB · ${upperPb.r} reps` : 'Log a pull or press to track',
+    },
+    {
+      colorBg:  'var(--sage-bg)', colorBd: 'var(--sage-mid)', colorAcc: 'var(--sage-dk)',
+      title: 'Cardio',
+      val:   cardioSessions > 0 ? `${cardioSessions}` : '—',
+      sub:   cardioSessions > 0
+        ? `cardio sessions · ${weeksTrained} week${weeksTrained !== 1 ? 's' : ''} in`
+        : 'Complete a session to track',
+    },
+  ];
+
+  document.getElementById('home-progress-stats').innerHTML = `
+    <div class="section-label" style="margin-top:20px">Progress</div>
+    <div style="margin:0 16px;display:flex;flex-direction:column;gap:8px;">
+      ${stats.map(s => `
+        <div style="display:flex;align-items:center;gap:0;background:${s.colorBg};border:1px solid ${s.colorBd};border-left:3px solid ${s.colorAcc};border-radius:var(--r-sm);padding:12px 14px;">
+          <div style="flex:1;">
+            <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${s.colorAcc};margin-bottom:5px;">${s.title}</div>
+            <div style="font-family:'DM Mono',monospace;font-size:22px;font-weight:500;color:var(--charcoal);line-height:1;">${s.val}</div>
+            <div style="font-size:11px;color:var(--ink3);margin-top:5px;">${s.sub}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+    <div style="height:8px;"></div>`;
 }
 
 function getNextSession(history, todayKey) {
@@ -2119,9 +2174,11 @@ function renderLog() {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="flex-shrink:0;margin-right:6px;display:inline-block;vertical-align:middle"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                 ${w.note}
               </div>
-              <div class="set-check ${warmupState[wi] ? 'done' : ''}" id="wu-chk-${wi}" onclick="tickWarmup(${wi},${sets})" style="width:auto;border-radius:var(--r-xs);padding:0 12px;height:32px;gap:6px;font-size:12px;font-weight:500;">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                ${warmupState[wi] ? 'Done ✓' : 'Done'}
+              <div class="set-check ${warmupState[wi] ? 'done' : ''}" id="wu-chk-${wi}" onclick="tickWarmup(${wi},${sets})">
+                ${warmupState[wi]
+                  ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`
+                  : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/></svg>`
+                }
               </div>
             </div>`).join('')}
         </div>
@@ -2210,21 +2267,33 @@ function toggleWarmup() {
 }
 
 function tickWarmup(wi, total) {
-  warmupState[wi] = true; // persist across re-renders
+  warmupState[wi] = !warmupState[wi];
   const chk = document.getElementById(`wu-chk-${wi}`);
-  if (chk) { chk.classList.add('done'); chk.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Done ✓`; }
-  // Count how many are done
+  if (chk) {
+    if (warmupState[wi]) {
+      chk.classList.add('done');
+      chk.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`;
+    } else {
+      chk.classList.remove('done');
+      chk.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/></svg>`;
+    }
+  }
   const done = Object.values(warmupState).filter(Boolean).length;
   const badge = document.getElementById('wu-badge');
   const hd = document.getElementById('wu-hd');
   if (badge) badge.textContent = `${done}/${total}`;
-  if (done === total) {
+  if (done === total && total > 0) {
     if (badge) badge.classList.add('complete');
     if (hd) hd.classList.add('ex-log-hd-done');
     setTimeout(() => {
       const b = document.getElementById('wu-body');
       if (b) b.style.display = 'none';
     }, 400);
+  } else {
+    if (badge) badge.classList.remove('complete');
+    if (hd) hd.classList.remove('ex-log-hd-done');
+    const b = document.getElementById('wu-body');
+    if (b && b.style.display === 'none') b.style.display = 'block';
   }
 }
 
