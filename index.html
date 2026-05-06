@@ -259,6 +259,34 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 }
 .tab.active { background:var(--charcoal); color:#ffffff; border-color:var(--charcoal); }
 
+/* ── NUTRITION LIQUID GLASS TOGGLE ──────────────────────────────── */
+.nut-lg-wrap { margin:0 16px 16px; }
+.nut-lg-track {
+  display:flex; position:relative;
+  background:rgba(118,118,128,0.12);
+  border-radius:11px; padding:2px;
+  border:0.5px solid rgba(0,0,0,0.07);
+}
+.nut-lg-thumb {
+  position:absolute; top:2px; bottom:2px;
+  background:#ffffff;
+  border-radius:9px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.12),0 0 0 0.5px rgba(0,0,0,0.04);
+  transition:left 0.26s cubic-bezier(0.35,1.3,0.6,1),width 0.26s cubic-bezier(0.35,1.3,0.6,1);
+  pointer-events:none;
+}
+.nut-lg-seg {
+  flex:1; padding:8px 4px;
+  border:none; background:transparent;
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',sans-serif;
+  font-size:12.5px; font-weight:500;
+  color:var(--ink2); cursor:pointer;
+  position:relative; z-index:1;
+  transition:color 0.2s; text-align:center;
+  border-radius:9px; white-space:nowrap;
+}
+.nut-lg-seg.active { color:var(--ink); font-weight:600; }
+
 /* ═══ HOME ═══════════════════════════════════════════════════════ */
 .home-header { padding:60px 22px 8px; display:flex; align-items:flex-start; justify-content:space-between; }
 .home-greeting { font-family: 'EB Garamond', Georgia, serif; font-size:42px; font-weight:500; letter-spacing:-0.2px; line-height:1.05; color:var(--charcoal); }
@@ -826,16 +854,14 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
   </div>
   <div style="height:14px"></div>
 
-  <!-- Toggle -->
-  <div style="margin:0 16px 14px;display:flex;gap:8px;">
-    <button id="nut-toggle-train" onclick="showDayType('train')" style="flex:1;padding:12px;border-radius:var(--r-sm);border:1.5px solid var(--rose-dk);background:var(--rose-dk);color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;">🏋️ Training Day</button>
-    <button id="nut-toggle-rest" onclick="showDayType('rest')" style="flex:1;padding:12px;border-radius:var(--r-sm);border:1.5px solid var(--border2);background:var(--white);color:var(--ink2);font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;">🧘 Rest Day</button>
-  </div>
-
-  <!-- Tabs -->
-  <div class="tabs" style="margin-bottom:14px;">
-    <div class="tab active" onclick="showNutTab('meals',this)">Meal Plan</div>
-    <div class="tab" onclick="showNutTab('supps',this)">Supplements</div>
+  <!-- Liquid Glass Toggle -->
+  <div class="nut-lg-wrap">
+    <div class="nut-lg-track">
+      <div class="nut-lg-thumb" id="nut-lg-thumb"></div>
+      <button class="nut-lg-seg active" id="nut-seg-train" onclick="nutSwitch('train')">Training Day</button>
+      <button class="nut-lg-seg" id="nut-seg-rest" onclick="nutSwitch('rest')">Rest Day</button>
+      <button class="nut-lg-seg" id="nut-seg-supps" onclick="nutSwitch('supps')">Supplements</button>
+    </div>
   </div>
 
   <div id="nut-tab-meals">
@@ -856,7 +882,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
       <!-- T: Breakfast -->
       <div style="margin:0 16px 10px;background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-sm);">
         <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--paper);">
-          <div style="width:34px;height:34px;border-radius:var(--r-sm);background:var(--rose-bg);display:flex;align-items:center;justify-content:center;font-size:15px;">🌅</div>
+          <div style="width:34px;height:34px;border-radius:var(--r-sm);background:var(--rose-bg);display:flex;align-items:center;justify-content:center;color:var(--ink2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 17v4M3 17h18M8 11.5a5 5 0 018 0M12 4v2M4.93 7.43l1.41 1.41M19.07 7.43l-1.41 1.41"/></svg></div>
           <div style="flex:1;"><div style="font-size:13px;font-weight:600;">Breakfast</div><div style="font-size:11px;color:var(--ink3);">398 kcal · 43.5g protein</div></div>
           <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--rose-dk);">P43.5 · C34 · F10.6</div>
         </div>
@@ -875,7 +901,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
       <!-- T: Lunch -->
       <div style="margin:0 16px 10px;background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-sm);">
         <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--paper);">
-          <div style="width:34px;height:34px;border-radius:var(--r-sm);background:var(--sage-bg);display:flex;align-items:center;justify-content:center;font-size:15px;">☀️</div>
+          <div style="width:34px;height:34px;border-radius:var(--r-sm);background:var(--sage-bg);display:flex;align-items:center;justify-content:center;color:var(--ink2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></div>
           <div style="flex:1;"><div style="font-size:13px;font-weight:600;">Lunch</div><div style="font-size:11px;color:var(--ink3);">449 kcal · 37.5g protein</div></div>
           <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--sage-dk);">P37.5 · C26.1 · F20.6</div>
         </div>
@@ -892,7 +918,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
       <!-- T: Pre-Workout -->
       <div style="margin:0 16px 10px;background:var(--white);border:1.5px solid var(--rose);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-sm);">
         <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--rose);background:var(--rose-bg);">
-          <div style="width:34px;height:34px;border-radius:var(--r-sm);background:var(--white);display:flex;align-items:center;justify-content:center;font-size:15px;">💪</div>
+          <div style="width:34px;height:34px;border-radius:var(--r-sm);background:var(--white);display:flex;align-items:center;justify-content:center;color:var(--ink2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
           <div style="flex:1;"><div style="font-size:13px;font-weight:600;color:var(--rose-dk);">Pre-Workout</div><div style="font-size:11px;color:var(--rose-dk);opacity:0.8;">185 kcal · fast carbs before training</div></div>
           <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--rose-dk);">P2.1 · C37.1 · F5.3</div>
         </div>
@@ -906,7 +932,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
       <!-- T: Dinner A -->
       <div style="margin:0 16px 10px;background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-sm);">
         <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--paper);">
-          <div style="width:34px;height:34px;border-radius:var(--r-sm);background:var(--mauve-bg);display:flex;align-items:center;justify-content:center;font-size:15px;">🌙</div>
+          <div style="width:34px;height:34px;border-radius:var(--r-sm);background:var(--mauve-bg);display:flex;align-items:center;justify-content:center;color:var(--ink2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></div>
           <div style="flex:1;"><div style="font-size:13px;font-weight:600;">Dinner A</div><div style="font-size:11px;color:var(--ink3);">389 kcal · 45.3g protein</div></div>
           <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--mauve-dk);">P45.3 · C21.3 · F12.1</div>
         </div>
@@ -922,7 +948,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
       <!-- T: Dinner B -->
       <div style="margin:0 16px 10px;background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-sm);">
         <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--paper);">
-          <div style="width:34px;height:34px;border-radius:var(--r-sm);background:var(--peach-bg);display:flex;align-items:center;justify-content:center;font-size:15px;">🌙</div>
+          <div style="width:34px;height:34px;border-radius:var(--r-sm);background:var(--peach-bg);display:flex;align-items:center;justify-content:center;color:var(--ink2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></div>
           <div style="flex:1;"><div style="font-size:13px;font-weight:600;">Dinner B</div><div style="font-size:11px;color:var(--ink3);">447 kcal · 38.6g protein</div></div>
           <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--peach-dk);">P38.6 · C14.6 · F26.1</div>
         </div>
@@ -938,7 +964,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
       <!-- T: Snack -->
       <div style="margin:0 16px 10px;background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-sm);">
         <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--paper);">
-          <div style="width:34px;height:34px;border-radius:var(--r-sm);background:var(--lemon-bg);display:flex;align-items:center;justify-content:center;font-size:15px;">🍪</div>
+          <div style="width:34px;height:34px;border-radius:var(--r-sm);background:var(--lemon-bg);display:flex;align-items:center;justify-content:center;color:var(--ink2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
           <div style="flex:1;"><div style="font-size:13px;font-weight:600;">Snack</div><div style="font-size:11px;color:var(--ink3);">129 kcal · 1.8g protein</div></div>
           <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--lemon-dk);">P1.8 · C18 · F5.7</div>
         </div>
@@ -970,7 +996,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
       <!-- R: Breakfast -->
       <div style="margin:0 16px 10px;background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-sm);">
         <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--paper);">
-          <div style="width:34px;height:34px;border-radius:var(--r-sm);background:var(--rose-bg);display:flex;align-items:center;justify-content:center;font-size:15px;">🌅</div>
+          <div style="width:34px;height:34px;border-radius:var(--r-sm);background:var(--rose-bg);display:flex;align-items:center;justify-content:center;color:var(--ink2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 17v4M3 17h18M8 11.5a5 5 0 018 0M12 4v2M4.93 7.43l1.41 1.41M19.07 7.43l-1.41 1.41"/></svg></div>
           <div style="flex:1;"><div style="font-size:13px;font-weight:600;">Breakfast</div><div style="font-size:11px;color:var(--ink3);">327 kcal · 42.7g protein</div></div>
           <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--rose-dk);">P42.7 · C14.9 · F10.7</div>
         </div>
@@ -987,7 +1013,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
       <!-- R: Lunch -->
       <div style="margin:0 16px 10px;background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-sm);">
         <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--paper);">
-          <div style="width:34px;height:34px;border-radius:var(--r-sm);background:var(--sage-bg);display:flex;align-items:center;justify-content:center;font-size:15px;">☀️</div>
+          <div style="width:34px;height:34px;border-radius:var(--r-sm);background:var(--sage-bg);display:flex;align-items:center;justify-content:center;color:var(--ink2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></div>
           <div style="flex:1;"><div style="font-size:13px;font-weight:600;">Lunch</div><div style="font-size:11px;color:var(--ink3);">337 kcal · 28.5g protein</div></div>
           <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--sage-dk);">P28.5 · C16.9 · F15.6</div>
         </div>
@@ -1004,7 +1030,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
       <!-- R: Post-lunch -->
       <div style="margin:0 16px 10px;background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-sm);">
         <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--paper);">
-          <div style="width:34px;height:34px;border-radius:var(--r-sm);background:var(--peach-bg);display:flex;align-items:center;justify-content:center;font-size:15px;">🌿</div>
+          <div style="width:34px;height:34px;border-radius:var(--r-sm);background:var(--peach-bg);display:flex;align-items:center;justify-content:center;color:var(--ink2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 3C21 3 14 3 9 8c-5 5-6 13-6 13s8-1 13-6 5-12 5-12z"/><path d="M3 21l6-6"/></svg></div>
           <div style="flex:1;"><div style="font-size:13px;font-weight:600;">Post-Lunch</div><div style="font-size:11px;color:var(--ink3);">165 kcal · 2.5g protein</div></div>
           <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--peach-dk);">P2.5 · C38.3 · F2.0</div>
         </div>
@@ -1017,7 +1043,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
       <!-- R: Dinner A -->
       <div style="margin:0 16px 10px;background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-sm);">
         <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--paper);">
-          <div style="width:34px;height:34px;border-radius:var(--r-sm);background:var(--mauve-bg);display:flex;align-items:center;justify-content:center;font-size:15px;">🌙</div>
+          <div style="width:34px;height:34px;border-radius:var(--r-sm);background:var(--mauve-bg);display:flex;align-items:center;justify-content:center;color:var(--ink2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></div>
           <div style="flex:1;"><div style="font-size:13px;font-weight:600;">Dinner A</div><div style="font-size:11px;color:var(--ink3);">313 kcal · 47g protein</div></div>
           <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--mauve-dk);">P47 · C11.1 · F7.3</div>
         </div>
@@ -1033,7 +1059,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
       <!-- R: Dinner B -->
       <div style="margin:0 16px 10px;background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-sm);">
         <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--paper);">
-          <div style="width:34px;height:34px;border-radius:var(--r-sm);background:var(--peach-bg);display:flex;align-items:center;justify-content:center;font-size:15px;">🌙</div>
+          <div style="width:34px;height:34px;border-radius:var(--r-sm);background:var(--peach-bg);display:flex;align-items:center;justify-content:center;color:var(--ink2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></div>
           <div style="flex:1;"><div style="font-size:13px;font-weight:600;">Dinner B</div><div style="font-size:11px;color:var(--ink3);">405 kcal · 46.3g protein</div></div>
           <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--peach-dk);">P46.3 · C11.8 · F21.3</div>
         </div>
@@ -1049,7 +1075,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
       <!-- R: Snack -->
       <div style="margin:0 16px 10px;background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-sm);">
         <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--paper);">
-          <div style="width:34px;height:34px;border-radius:var(--r-sm);background:var(--lemon-bg);display:flex;align-items:center;justify-content:center;font-size:15px;">🍪</div>
+          <div style="width:34px;height:34px;border-radius:var(--r-sm);background:var(--lemon-bg);display:flex;align-items:center;justify-content:center;color:var(--ink2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
           <div style="flex:1;"><div style="font-size:13px;font-weight:600;">Snack</div><div style="font-size:11px;color:var(--ink3);">80 kcal · 0.7g protein</div></div>
           <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--lemon-dk);">P0.7 · C18.3 · F1.4</div>
         </div>
@@ -1071,50 +1097,50 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
     <div style="margin:0 16px;background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-sm);">
       <div style="padding:12px 16px;border-bottom:1px solid var(--border);background:var(--paper);"><div style="font-size:10.5px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--ink3);">With Breakfast — Every Day</div></div>
       <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);">
-        <div style="width:32px;height:32px;border-radius:var(--r-xs);background:var(--rose-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;">💊</div>
+        <div style="width:32px;height:32px;border-radius:var(--r-xs);background:var(--rose-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--ink2)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10.5 20.5L3.5 13.5a5 5 0 117.07-7.07l7 7a5 5 0 11-7.07 7.07z"/><path d="M12 7L7 12"/></svg></div>
         <div style="flex:1;"><div style="font-size:13px;font-weight:500;">Creatine Monohydrate</div><div style="font-size:11px;color:var(--ink3);margin-top:1px;">5g daily · Optimum Nutrition (40 AED/m)</div></div>
         <span class="chip chip-rose">Essential</span>
       </div>
       <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);">
-        <div style="width:32px;height:32px;border-radius:var(--r-xs);background:var(--peach-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;">🧴</div>
+        <div style="width:32px;height:32px;border-radius:var(--r-xs);background:var(--peach-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--ink2)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2L5.5 13.5a7.5 7.5 0 1013 0L12 2z"/></svg></div>
         <div style="flex:1;"><div style="font-size:13px;font-weight:500;">Collagen Peptides</div><div style="font-size:11px;color:var(--ink3);margin-top:1px;">5g daily · mix into breakfast smoothie</div></div>
         <span class="chip chip-rose">Essential</span>
       </div>
       <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);">
-        <div style="width:32px;height:32px;border-radius:var(--r-xs);background:var(--paper2);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;">🌾</div>
+        <div style="width:32px;height:32px;border-radius:var(--r-xs);background:var(--paper2);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--ink2)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 3C21 3 14 3 9 8c-5 5-6 13-6 13s8-1 13-6 5-12 5-12z"/><path d="M3 21l5-5"/></svg></div>
         <div style="flex:1;"><div style="font-size:13px;font-weight:500;">Psyllium Husk Fibre</div><div style="font-size:11px;color:var(--ink3);margin-top:1px;">3g in breakfast daily</div></div>
         <span class="chip chip-sage">Recommended</span>
       </div>
       <div style="padding:12px 16px;border-bottom:1px solid var(--border);border-top:1px solid var(--border);background:var(--paper);"><div style="font-size:10.5px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--ink3);">With Lunch — Every Day</div></div>
       <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);">
-        <div style="width:32px;height:32px;border-radius:var(--r-xs);background:var(--sage-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;">🐟</div>
+        <div style="width:32px;height:32px;border-radius:var(--r-xs);background:var(--sage-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--ink2)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2L5.5 13.5a7.5 7.5 0 1013 0L12 2z"/></svg></div>
         <div style="flex:1;"><div style="font-size:13px;font-weight:500;">Omega 3 + CoQ10</div><div style="font-size:11px;color:var(--ink3);margin-top:1px;">3g daily · Thorne (80 AED/m) or Viva Naturals</div></div>
         <span class="chip chip-rose">Essential</span>
       </div>
       <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);">
-        <div style="width:32px;height:32px;border-radius:var(--r-xs);background:var(--sky-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;">💊</div>
+        <div style="width:32px;height:32px;border-radius:var(--r-xs);background:var(--sky-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--ink2)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10.5 20.5L3.5 13.5a5 5 0 117.07-7.07l7 7a5 5 0 11-7.07 7.07z"/><path d="M12 7L7 12"/></svg></div>
         <div style="flex:1;"><div style="font-size:13px;font-weight:500;">Multivitamin</div><div style="font-size:11px;color:var(--ink3);margin-top:1px;">2× daily · Life Extension (42 AED/m) or Thorne (150 AED/m)</div></div>
         <span class="chip chip-rose">Essential</span>
       </div>
       <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;">
-        <div style="width:32px;height:32px;border-radius:var(--r-xs);background:var(--lemon-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;">☀️</div>
+        <div style="width:32px;height:32px;border-radius:var(--r-xs);background:var(--lemon-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--ink2)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2"/></svg></div>
         <div style="flex:1;"><div style="font-size:13px;font-weight:500;">Vitamin D3 + K2</div><div style="font-size:11px;color:var(--ink3);margin-top:1px;">With food · especially important in Dubai</div></div>
         <span class="chip chip-sky">Optional</span>
       </div>
       <div style="padding:12px 16px;border-bottom:1px solid var(--border);border-top:1px solid var(--border);background:var(--paper);"><div style="font-size:10.5px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--ink3);">After Dinner — Alternate Days</div></div>
       <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);">
-        <div style="width:32px;height:32px;border-radius:var(--r-xs);background:var(--mauve-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;">💊</div>
+        <div style="width:32px;height:32px;border-radius:var(--r-xs);background:var(--mauve-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--ink2)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10.5 20.5L3.5 13.5a5 5 0 117.07-7.07l7 7a5 5 0 11-7.07 7.07z"/><path d="M12 7L7 12"/></svg></div>
         <div style="flex:1;"><div style="font-size:13px;font-weight:500;">Magnesium</div><div style="font-size:11px;color:var(--ink3);margin-top:1px;">Doctor's Best (22 AED/m) or Thorne (115 AED/m)</div></div>
         <span class="chip chip-rose">Essential</span>
       </div>
       <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;">
-        <div style="width:32px;height:32px;border-radius:var(--r-xs);background:var(--peach-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;">💊</div>
+        <div style="width:32px;height:32px;border-radius:var(--r-xs);background:var(--peach-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--ink2)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10.5 20.5L3.5 13.5a5 5 0 117.07-7.07l7 7a5 5 0 11-7.07 7.07z"/><path d="M12 7L7 12"/></svg></div>
         <div style="flex:1;"><div style="font-size:13px;font-weight:500;">Iron Bisglycinate</div><div style="font-size:11px;color:var(--ink3);margin-top:1px;">Solgar Gentle Iron (8 AED/m) · alternate with magnesium</div></div>
         <span class="chip chip-rose">Essential</span>
       </div>
     </div>
     <div style="margin:10px 16px;padding:12px 14px;background:var(--paper);border-radius:var(--r-sm);font-size:12px;color:var(--ink3);line-height:1.6;">
-      💡 Most affordable stack: Life Extension multi + Solgar Iron + Doctor's Best Magnesium + Optimum Nutrition creatine ≈ <strong style="color:var(--ink);">~132 AED/month</strong>
+      Most affordable stack: Life Extension multi + Solgar Iron + Doctor's Best Magnesium + Optimum Nutrition creatine ≈ <strong style="color:var(--ink);">~132 AED/month</strong>
     </div>
     <div style="height:16px;"></div>
   </div>
@@ -2605,29 +2631,24 @@ function renderNutrition() {
       <div style="flex:1"><div class="supp-name">${s.name}</div><div class="supp-dose">${s.dose}</div></div>
       <span class="chip ${s.priority === 'Essential' ? 'chip-rose' : s.priority === 'Recommended' ? 'chip-sage' : 'chip-sky'}">${s.priority}</span>
     </div>`).join('');
+
+  nutSwitch('train');
 }
 
-function showDayType(type) {
-  const trainBtn = document.getElementById('nut-toggle-train');
-  const restBtn = document.getElementById('nut-toggle-rest');
-  const trainMeals = document.getElementById('nut-train-meals');
-  const restMeals = document.getElementById('nut-rest-meals');
-  if (type === 'train') {
-    trainBtn.style.background = 'var(--rose-dk)'; trainBtn.style.color = '#fff'; trainBtn.style.borderColor = 'var(--rose-dk)';
-    restBtn.style.background = 'var(--white)'; restBtn.style.color = 'var(--ink2)'; restBtn.style.borderColor = 'var(--border2)';
-    trainMeals.style.display = 'block'; restMeals.style.display = 'none';
-  } else {
-    restBtn.style.background = 'var(--ink)'; restBtn.style.color = '#fff'; restBtn.style.borderColor = 'var(--ink)';
-    trainBtn.style.background = 'var(--white)'; trainBtn.style.color = 'var(--ink2)'; trainBtn.style.borderColor = 'var(--border2)';
-    restMeals.style.display = 'block'; trainMeals.style.display = 'none';
+function nutSwitch(type) {
+  const track = document.querySelector('.nut-lg-track');
+  const segs = track.querySelectorAll('.nut-lg-seg');
+  const thumb = document.getElementById('nut-lg-thumb');
+  const idx = { train: 0, rest: 1, supps: 2 }[type];
+  segs.forEach((s, i) => s.classList.toggle('active', i === idx));
+  thumb.style.left = segs[idx].offsetLeft + 'px';
+  thumb.style.width = segs[idx].offsetWidth + 'px';
+  document.getElementById('nut-tab-meals').style.display = type !== 'supps' ? 'block' : 'none';
+  document.getElementById('nut-tab-supps').style.display = type === 'supps' ? 'block' : 'none';
+  if (type !== 'supps') {
+    document.getElementById('nut-train-meals').style.display = type === 'train' ? 'block' : 'none';
+    document.getElementById('nut-rest-meals').style.display = type === 'rest' ? 'block' : 'none';
   }
-}
-
-function showNutTab(tab, el) {
-  document.querySelectorAll('#page-nutrition .tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById('nut-tab-meals').style.display = tab === 'meals' ? 'block' : 'none';
-  document.getElementById('nut-tab-supps').style.display = tab === 'supps' ? 'block' : 'none';
 }
 
 async function addFood() {
@@ -3787,8 +3808,7 @@ window.emailMonthSummary = emailMonthSummary;
 window.emailSummary = emailSummary;
 window.emailFullHistory = emailFullHistory;
 window.exportProgramme = exportProgramme;
-window.showDayType = showDayType;
-window.showNutTab = showNutTab;
+window.nutSwitch = nutSwitch;
 window.addFood = addFood;
 window.delFood = delFood;
 window.selectPhase = selectPhase;
