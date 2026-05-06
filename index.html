@@ -15,42 +15,42 @@
 :root {
   /* ── Core palette ──────────────────────────────────────── */
   --white:     #ffffff;
-  --bg:        #f3f3f1;       /* warm pale grey page bg */
-  --charcoal:  #222220;       /* primary text */
-  --ink:       #222220;
-  --ink2:      #68655f;       /* secondary text */
-  --ink3:      #a09d99;       /* tertiary / placeholder */
+  --bg:        #f1f2f5;       /* cool grey page bg */
+  --charcoal:  #1c1e22;       /* cool charcoal text */
+  --ink:       #1c1e22;
+  --ink2:      #60636a;       /* cool mid grey */
+  --ink3:      #9ea2ab;       /* cool light grey */
 
   /* ── Surfaces ──────────────────────────────────────────── */
   --glass:        #ffffff;
   --glass-heavy:  #ffffff;
   --glass-border: rgba(0,0,0,0.08);
-  --glass-inner:  #f6f6f4;
+  --glass-inner:  #f4f5f8;
   --glass-specular: 0 0 0 0 transparent;
 
   /* ── Borders ───────────────────────────────────────────── */
   --border:   rgba(0,0,0,0.09);
   --border2:  rgba(0,0,0,0.15);
-  --paper:    #f9f9f7;
-  --paper2:   #eeeeec;
+  --paper:    #f7f8fb;
+  --paper2:   #ecedf2;
 
   /* ── Pink — today / active ─────────────────────────────── */
-  --rose:     #fde8ed;
-  --rose-dk:  #c0415b;
-  --rose-bg:  #fef3f6;
-  --rose-mid: #fde8ed;
+  --rose:     #fadadf;        /* visible pastel pink border */
+  --rose-dk:  #c0304f;
+  --rose-bg:  #fef0f3;        /* very pale section bg */
+  --rose-mid: #fadadf;
 
   /* ── Green — session done ──────────────────────────────── */
-  --sage:     #dff0e8;
-  --sage-dk:  #1a8050;
-  --sage-bg:  #edf8f3;
-  --sage-mid: #dff0e8;
+  --sage:     #c8ebd8;        /* visible pastel green border */
+  --sage-dk:  #167a49;
+  --sage-bg:  #eaf6f0;        /* very pale section bg */
+  --sage-mid: #c8ebd8;
 
   /* ── Blue — rest day ───────────────────────────────────── */
-  --sky:      #deeaf8;
-  --sky-dk:   #2f57a8;
-  --sky-bg:   #edf4fc;
-  --sky-mid:  #deeaf8;
+  --sky:      #c2d8f5;        /* visible pastel blue border */
+  --sky-dk:   #2450a0;
+  --sky-bg:   #eaf1fb;        /* very pale section bg */
+  --sky-mid:  #c2d8f5;
 
   /* ── Neutral tags ──────────────────────────────────────── */
   --mauve:    #ebebeb;
@@ -1899,7 +1899,7 @@ function renderProgram() {
 
     if (isRest) {
       return `
-        <div class="day-card" id="dc-${k}">
+        <div class="day-card" id="dc-${k}" style="border-color:var(--sky);">
           <div class="day-card-hd" style="cursor:default;">
             <div class="day-pill rest-pill">${day.name.slice(0, 3).toUpperCase()}</div>
             <div style="flex:1"><div class="dname">${day.name}</div><div class="dfocus">${day.focus}</div></div>
@@ -1909,9 +1909,10 @@ function renderProgram() {
     }
 
     const cardioOnly = !!day.cardioOnly;
+    const cardBorderColor = isToday ? 'var(--rose)' : done ? 'var(--sage)' : 'var(--border)';
 
     return `
-      <div class="day-card" id="dc-${k}">
+      <div class="day-card" id="dc-${k}" style="border-color:${cardBorderColor};">
         <div class="day-card-hd" onclick="toggleDayCard('${k}')" style="cursor:pointer;">
           <div class="day-pill ${pillClass}">${day.name.slice(0, 3).toUpperCase()}</div>
           <div style="flex:1"><div class="dname">${day.name}</div><div class="dfocus">${day.focus}</div></div>
@@ -1925,16 +1926,16 @@ function renderProgram() {
             </div>
             ${day.exercises.map(ex => renderCardioBlock(ex)).join('')}
           ` : `
-            <div style="padding:12px 18px 8px;border-top:1px solid var(--border);background:var(--lemon-bg);">
-              <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--lemon-dk);margin-bottom:10px;">Warm-Up</div>
+            <div style="padding:10px 18px 8px;border-top:1px solid var(--sage-mid);background:var(--sage-bg);">
+              <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--sage-dk);margin-bottom:8px;">Warm-Up</div>
               ${(day.warmup||[]).map(w => `
-              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px;">
-                <div>
-                  <div style="font-size:12.5px;font-weight:500;color:var(--ink);">${w.name}</div>
-                  <div style="font-size:11px;color:var(--ink3);margin-top:2px;font-style:italic;">${w.note}</div>
-                </div>
-                <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--lemon-dk);flex-shrink:0;margin-top:2px;text-align:right;">${w.reps}</div>
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px;">
+                <div style="font-size:12.5px;font-weight:500;color:var(--ink);">${w.name}</div>
+                <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--sage-dk);flex-shrink:0;white-space:nowrap;">${w.reps}</div>
               </div>`).join('')}
+            </div>
+            <div style="padding:8px 18px 6px;border-top:1px solid var(--rose-mid);background:var(--rose-bg);">
+              <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--rose-dk);">Exercises</div>
             </div>
             ${day.exercises.map(ex => {
               if (ex.cardio) return renderCardioBlock(ex);
@@ -1945,13 +1946,13 @@ function renderProgram() {
                   <div class="prog-ex-name">${ex.name}</div>
                   <div class="prog-ex-tags">
                     ${ex.key ? '<span class="chip chip-rose">Key lift</span>' : ''}
-                    ${ex.changed ? '<span class="chip chip-lemon">Updated</span>' : ''}
+                    ${ex.changed ? '<span class="chip chip-sky">Updated</span>' : ''}
                     ${ex.type.includes('Superset') || ex.type.includes('Circuit') ? `<span class="chip chip-mauve">${ex.type}</span>` : ''}
                   </div>
                 </div>
-                <div style="text-align:right;flex-shrink:0;">
-                  <div class="prog-ex-sets">${ex.sets}×${ex.reps}</div>
-                  ${tgt ? `<div style="font-size:10px;color:var(--lemon-dk);margin-top:3px;font-family:'DM Mono',monospace;white-space:nowrap;">↑ ${tgt.w}</div>` : ''}
+                <div style="text-align:right;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+                  <div style="font-family:'DM Mono',monospace;font-size:14px;font-weight:500;color:var(--charcoal);">${ex.sets}×${ex.reps}</div>
+                  ${tgt ? `<span style="background:var(--rose-bg);color:var(--rose-dk);border:1px solid var(--rose-mid);padding:2px 8px;border-radius:50px;font-size:10px;font-family:'DM Mono',monospace;white-space:nowrap;">↑ ${tgt.w}</span>` : ''}
                 </div>
               </div>`;
             }).join('')}
