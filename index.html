@@ -2243,6 +2243,28 @@ function renderLog() {
     const restLabel = ex.cardio ? '' : `Rest between sets: ${ex.rest}s`;
     const durationLabel = timed === 'minutes' ? 'Duration (min)' : 'Duration (sec)';
     const durationPlaceholder = timed === 'minutes' ? 'min' : 'sec';
+
+    // Today's Target box — dynamic progression from last session
+    let targetBox = '';
+    if (!isTimedEx && !ex.cardio && prev && prev.w) {
+      const prevW = parseFloat(prev.w);
+      const prevR = parseInt(prev.r) || 0;
+      const nm = ex.name;
+      let inc;
+      if (/\bdb\b|dumbbell/i.test(nm)) inc = 2;
+      else if (/machine|cable|lat pull|pulldown/i.test(nm)) inc = 2.5;
+      else inc = 1.25;
+      const tgtW = Math.round((prevW + inc) * 100) / 100;
+      const tgtR = parseInt(ex.reps) || prevR;
+      targetBox = `<div style="margin:0 0 12px;padding:11px 14px;background:#fffcef;border:1.5px solid #e0c040;border-radius:var(--r-sm);">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#7a6018;margin-bottom:5px;">Today's Target</div>
+        <div style="font-size:16px;font-weight:700;color:var(--ink);letter-spacing:-0.3px;">${tgtW}kg &times; ${tgtR}</div>
+        <div style="margin-top:6px;font-size:11.5px;color:var(--ink2);line-height:1.5;">
+          Alternatives &nbsp;·&nbsp; <span style="font-weight:500;">${prevW}kg &times; ${prevR + 2} reps</span> &nbsp;·&nbsp; <span style="font-weight:500;">${ex.sets + 1} sets at ${prevW}kg</span>
+        </div>
+      </div>`;
+    }
+
     return `
       <div class="ex-log-card">
         <div class="ex-log-hd ${all ? 'ex-log-hd-done' : ''}" onclick="toggleExLog(${i})">
@@ -2257,16 +2279,11 @@ function renderLog() {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="flex-shrink:0;margin-right:6px;display:inline-block;vertical-align:middle"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             ${ex.note}
           </div>
-          ${(getTarget(ex.name) || restLabel) ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
-            ${getTarget(ex.name) ? `<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:5px;background:#fce8ef;color:#c4475e;font-size:11.5px;font-weight:600;letter-spacing:0.1px;">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r="1" fill="currentColor"/></svg>
-              Target: ${getTarget(ex.name).w}
-            </span>` : ''}
-            ${restLabel ? `<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:5px;background:#fdf0e8;color:#b86020;font-size:11.5px;font-weight:600;letter-spacing:0.1px;">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              Rest: ${ex.rest}s
-            </span>` : ''}
-          </div>` : ''}
+          ${targetBox}
+          ${restLabel ? `<div style="margin:0 0 12px;"><span style="display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:5px;background:#fdf0e8;color:#b86020;font-size:11.5px;font-weight:600;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Rest: ${ex.rest}s
+          </span></div>` : ''}
           <div class="set-col-hds ${isTimedEx ? 'timed' : 'no-vol'}">
             <div></div>
             ${isTimedEx
@@ -3856,12 +3873,14 @@ window.sendCoachMessage = sendCoachMessage;
     document.getElementById('loading-screen').classList.add('hidden');
     window.PREVIEW_MODE = false;
   }
-  // Auto-select today's day and correct phase
+  // Auto-select today's day and correct phase — always start with a clean log
   (function() {
     const todayKey = ['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
     const weeksIn = Math.max(1, Math.ceil((Date.now() - appState.startDate) / (7 * 24 * 3600 * 1000)));
     logPhase = 1;
     logDay = DAY_KEYS.includes(todayKey) ? todayKey : DAY_KEYS[0];
+    logSets = {};      // clear any draft-restored set data — no pre-checked values on fresh load
+    warmupState = {};
   })();
   renderHome();
   renderLogSelectors();
