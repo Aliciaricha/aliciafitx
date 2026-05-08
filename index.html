@@ -1301,9 +1301,9 @@ const PROGRAM = {
   1: {
     mon:{ name:"Monday", focus:"Glutes, Quads & Hamstrings",
     warmup:[
-      {name:"Hip Circle",reps:"10 reps each direction"},
-      {name:"Banded Glute Bridge",reps:"2×15"},
-      {name:"Bodyweight Squat",reps:"2×10"},
+      {name:"Leg Swings",reps:"10 reps each leg"},
+      {name:"Hip Circles",reps:"10 reps each direction"},
+      {name:"Bodyweight Squat",reps:"10 slow reps"},
     ],
     exercises:[
       {name:"Hip Thrust",type:"Compound",sets:4,reps:"10 reps",rest:REST.compound,note:"Barbell on floor, pad over hips, upper back against flat bench. Drive through heels, squeeze at top 1 sec. +2.5kg when all 4 sets clean.",key:true},
@@ -1328,9 +1328,9 @@ const PROGRAM = {
     ]},
     wed:{ name:"Wednesday", focus:"Glutes & Hamstrings",
     warmup:[
-      {name:"Banded Clamshell",reps:"2×15 each side"},
-      {name:"Hip 90/90 Stretch",reps:"60 sec each side"},
-      {name:"Bodyweight Glute Bridge",reps:"2×12"},
+      {name:"Leg Swings",reps:"10 reps each leg"},
+      {name:"Hip Circles",reps:"10 reps each direction"},
+      {name:"Bodyweight Squat",reps:"10 slow reps"},
     ],
     exercises:[
       {name:"Hip Thrust",type:"Compound",sets:4,reps:"10 reps",rest:REST.compound,note:"Same setup as Monday — same weight, same progression. Both sessions move up together. +2.5kg when all 4 sets clean.",key:true},
@@ -1341,9 +1341,9 @@ const PROGRAM = {
     ]},
     sat:{ name:"Saturday", focus:"Glutes & Core",
     warmup:[
-      {name:"Banded Glute Bridge",reps:"2×15"},
-      {name:"Hip Flexor Stretch",reps:"60 sec each side"},
-      {name:"Leg Swing",reps:"10 reps each leg"},
+      {name:"Leg Swings",reps:"10 reps each leg"},
+      {name:"Hip Circles",reps:"10 reps each direction"},
+      {name:"Bodyweight Squat",reps:"10 slow reps"},
     ],
     exercises:[
       {name:"Hip Thrust",type:"Compound",sets:3,reps:"8 reps",rest:REST.compound,note:"Saturday is 3×8 — go heavier or add a 2 sec pause at top of each rep. +2.5kg when all 3 sets clean.",key:true},
@@ -2210,18 +2210,14 @@ function renderLog() {
           </div>
           <div class="ex-progress-badge ${allDone ? 'complete' : ''}" id="wu-badge">${doneSoFar}/${sets}</div>
         </div>
-        <div class="ex-log-body" id="wu-body" style="display:${allDone ? 'none' : 'none'};">
+        <div class="ex-log-body" id="wu-body" style="display:${allDone ? 'none' : 'block'};">
           ${day.warmup.map((w, wi) => `
-            <div style="padding:10px 0;${wi > 0 ? 'border-top:1px solid var(--border);' : ''}">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                <div style="font-size:13px;font-weight:600;color:var(--ink);">${w.name}</div>
-                <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--ink3);flex-shrink:0;margin-left:8px;">${w.reps}</div>
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 0;${wi > 0 ? 'border-top:1px solid var(--border);' : ''}">
+              <div style="flex:1;">
+                <div style="font-size:13px;font-weight:500;color:var(--ink);">${w.name}</div>
+                <div style="font-size:11px;color:var(--ink3);margin-top:2px;">${w.reps}</div>
               </div>
-              <div class="coaching-tip" style="margin-bottom:8px;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="flex-shrink:0;margin-right:6px;display:inline-block;vertical-align:middle"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                ${w.note}
-              </div>
-              <div class="set-check ${warmupState[wi] ? 'done' : ''}" id="wu-chk-${wi}" onclick="tickWarmup(${wi},${sets})">
+              <div class="set-check ${warmupState[wi] ? 'done' : ''}" id="wu-chk-${wi}" onclick="tickWarmup(${wi},${sets})" style="border-radius:50%;flex-shrink:0;">
                 ${warmupState[wi]
                   ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`
                   : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/></svg>`
