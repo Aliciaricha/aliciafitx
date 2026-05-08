@@ -3321,7 +3321,7 @@ function renderProgress() {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--rose-dk)" stroke-width="2"><path d="M6 4v16M18 4v16M6 12h12"/></svg>
           </div>
           <div style="flex:1;min-width:0;">
-            <div style="font-size:13px;font-weight:600;color:var(--ink);">${h.dayName}</div>
+            <div style="font-size:13px;font-weight:600;color:var(--ink);">${h.focus || h.dayName}</div>
             <div style="font-size:11px;color:var(--ink3);margin-top:1px;">${date} · ${time}</div>
           </div>
           <div style="text-align:right;flex-shrink:0;">
@@ -3657,7 +3657,7 @@ function openEditModal(id) {
   editingWorkoutId = id;
 
   const date = new Date(workout.ts).toLocaleDateString("en-GB", { weekday:"short", day:"numeric", month:"short", year:"numeric" });
-  document.getElementById("edit-modal-subtitle").textContent = workout.dayName + " — " + date;
+  document.getElementById("edit-modal-subtitle").textContent = (workout.focus || workout.dayName) + " — " + date;
 
   // Group sets by exercise name, preserving original keys
   const byEx = {};
@@ -3671,8 +3671,21 @@ function openEditModal(id) {
     });
   }
 
+  // Format timestamp as YYYY-MM-DD for the date input
+  const tsDate = new Date(workout.ts);
+  const yyyy = tsDate.getFullYear();
+  const mm = String(tsDate.getMonth() + 1).padStart(2, '0');
+  const dd = String(tsDate.getDate()).padStart(2, '0');
+  const dateVal = `${yyyy}-${mm}-${dd}`;
+
   const body = document.getElementById("edit-modal-body");
-  body.innerHTML = Object.entries(byEx).map(([name, sets]) => {
+  const dateBlock = `<div style="background:var(--paper);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px 14px;">
+    <div style="font-size:11px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:var(--ink3);margin-bottom:8px;">Date</div>
+    <input type="date" id="edit-modal-date" value="${dateVal}"
+      style="width:100%;padding:9px 12px;border:1.5px solid var(--border2);border-radius:var(--r-xs);font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;font-size:14px;color:var(--ink);background:var(--white);-webkit-appearance:none;">
+  </div>`;
+
+  body.innerHTML = dateBlock + (Object.entries(byEx).map(([name, sets]) => {
     const keys = keysByEx[name];
     const isTimed = sets.every(s => !s.w && s.r);
     return `<div style="background:var(--paper);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px 14px;">
@@ -3701,7 +3714,7 @@ function openEditModal(id) {
         </div>`
       ).join("")}
     </div>`;
-  }).join("") || "<div style='font-size:13px;color:var(--ink3);text-align:center;padding:20px;'>No exercise data recorded for this session.</div>";
+  }).join("") || "<div style='font-size:13px;color:var(--ink3);text-align:center;padding:20px;'>No exercise data recorded for this session.</div>");
 
   const modal = document.getElementById("edit-modal");
   modal.style.display = "flex";
@@ -3738,9 +3751,20 @@ async function saveEditedSession() {
     if (s && s.w && s.r) newVol += parseFloat(s.w) * parseFloat(s.r);
   });
 
+  // Read edited date — preserve original time-of-day
+  const dateInput = document.getElementById('edit-modal-date');
+  let newTs = workout.ts;
+  if (dateInput && dateInput.value) {
+    const [y, m, d] = dateInput.value.split('-').map(Number);
+    const orig = new Date(workout.ts);
+    orig.setFullYear(y, m - 1, d);
+    newTs = orig.getTime();
+  }
+
   // Update in appState immediately
   workout.sets = updatedSets;
   workout.vol = Math.round(newVol);
+  workout.ts = newTs;
 
   // Re-scan PBs for edited exercises — update appState.pbs if this session now has a higher value
   Object.values(updatedSets).forEach(s => {
@@ -3759,6 +3783,7 @@ async function saveEditedSession() {
     const { error } = await sb.from("workouts").update({
       sets_data: updatedSets,
       vol: Math.round(newVol),
+      ts: newTs,
     }).eq("id", editingWorkoutId);
     if (error) {
       showSync("error", "Save failed — try again");
