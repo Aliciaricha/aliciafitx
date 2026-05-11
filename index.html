@@ -1378,6 +1378,9 @@ const PROGRAM = {
     exercises:[
       {name:"Incline Treadmill Walk",type:"Cardio",sets:1,reps:"35 min",rest:REST.cardio,note:"Zone 2 · 15% incline · 5.5–6.0 km/h. Target HR 120–135 bpm. Conversational pace.",cardio:true,cardioDetails:{duration:"35 min",equipment:"Treadmill",incline:"15%",speed:"5.5–6.0 km/h",zone:2,zoneRange:"60–70% max HR",zoneNote:"Zone 2 — fat burning, aerobic base. Target HR 120–135 bpm. You can hold a full conversation. Start 5.5 km/h — add 0.1 km/h per session. At 6 km/h, increase incline +1% instead."}},
       {name:"Cross Trainer",type:"Cardio",sets:1,reps:"35 min",rest:REST.cardio,note:"Zone 2 steady: HR 120–135 at level 8–10. Or Zone 3 intervals: 2 min hard (140–155 bpm) / 2 min easy for 6–8 rounds.",cardio:true,cardioDetails:{duration:"35 min",equipment:"Cross Trainer",difficulty:"Level 8–10",zone:2,zoneRange:"60–70% max HR",zoneNote:"Zone 2 steady at level 8–10, HR 120–135 bpm. Or Zone 3 intervals: 2 min hard / 2 min easy for 6–8 rounds. Vary week to week. Increase level by 1 when Zone 2 HR drops below 115 bpm."}},
+      {name:"Flat Treadmill",type:"Cardio",sets:1,reps:"35 min",rest:REST.cardio,note:"Zone 2 · Flat · 6.5–8.0 km/h brisk walk or light jog. Target HR 120–135 bpm.",cardio:true,cardioDetails:{duration:"35 min",equipment:"Treadmill",incline:"Flat (0%)",speed:"6.5–8.0 km/h",zone:2,zoneRange:"60–70% max HR",zoneNote:"Flat treadmill — fast walk or light jog. HR 120–135 bpm. Increase speed by 0.5 km/h per session when HR stays comfortably below 130 bpm."}},
+      {name:"Swimming",type:"Cardio",sets:1,reps:"30 min",rest:REST.cardio,note:"Zone 2–3 · Any stroke · Aim for continuous laps. Rest 15 sec between lengths if needed.",cardio:true,cardioDetails:{duration:"30 min",equipment:"Pool",incline:null,speed:null,zone:2,zoneRange:"60–75% max HR",zoneNote:"Any stroke — front crawl recommended. Aim for continuous laps in Zone 2–3. 30 min of swimming equals ~45 min on the treadmill for cardio output. Build to unbroken 30 min."}},
+      {name:"Cycling",type:"Cardio",sets:1,reps:"35 min",rest:REST.cardio,note:"Zone 2 · Stationary bike · Level 8–12 moderate resistance. Target HR 120–135 bpm.",cardio:true,cardioDetails:{duration:"35 min",equipment:"Bike",incline:null,speed:null,difficulty:"Level 8–12",zone:2,zoneRange:"60–70% max HR",zoneNote:"Stationary bike. Resistance level 8–12 — adjust to keep HR in Zone 2 (120–135 bpm). Increase level by 1 when HR stays below 115 bpm. Extend from 35 to 40 min as fitness builds."}},
     ]},
     fri:{ name:"Friday", focus:"Rest & Recovery", isRest:true, warmup:[], exercises:[] },
   }
@@ -1421,7 +1424,8 @@ let calYear = new Date().getFullYear(), calMonth = new Date().getMonth();
 let lastFinishedEntry = null;
 let autoSaveTimer = null, autoCompleteTimer = null;
 const AUTO_COMPLETE_MS = 20 * 60 * 1000;
-let homeCoachHistory = []; // 20 minutes
+let homeCoachHistory = [];
+let cardioPickIdx = 0;
 
 /* ═══════════════════════════════════════════════════════
    SYNC UI
@@ -1910,7 +1914,7 @@ function renderSmartBanner(session, history) {
 }
 
 function goLog(dayKey, phase) {
-  logPhase = phase; logDay = dayKey; logSets = {};
+  logPhase = phase; logDay = dayKey; logSets = {}; cardioPickIdx = 0;
   showPage('log', document.querySelectorAll('.nav-btn')[2]);
 }
 
@@ -1939,10 +1943,12 @@ function renderCardioBlock(ex) {
       </div>`;
   }
   const isCrossTrainer = cd.equipment === 'Cross Trainer';
-  const metric1Label = isCrossTrainer ? 'Difficulty' : 'Incline';
-  const metric1Value = isCrossTrainer ? cd.difficulty : cd.incline;
-  const metric2Label = 'Speed';
-  const metric2Value = isCrossTrainer ? '—' : cd.speed;
+  const isBike = cd.equipment === 'Bike';
+  const isPool = cd.equipment === 'Pool';
+  const metric1Label = (isCrossTrainer || isBike) ? 'Difficulty' : isPool ? 'Style' : 'Incline';
+  const metric1Value = (isCrossTrainer || isBike) ? (cd.difficulty || '—') : isPool ? 'Any stroke' : (cd.incline || '—');
+  const metric2Label = isPool ? 'Target' : 'Speed';
+  const metric2Value = isPool ? 'continuous' : (cd.speed || '—');
   return `
     <div style="border-top:1px solid var(--sky);background:var(--sky-bg);padding:12px 16px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
@@ -2182,8 +2188,9 @@ function renderLogSelectors() {
   }).join('');
 }
 
-function setLogPhase(p) { logPhase = p; logSets = {}; warmupState = {}; renderLog(); }
-function setLogDay(k) { logDay = k; logSets = {}; warmupState = {}; renderLog(); }
+function setLogPhase(p) { logPhase = p; logSets = {}; warmupState = {}; cardioPickIdx = 0; renderLog(); }
+function setLogDay(k) { logDay = k; logSets = {}; warmupState = {}; cardioPickIdx = 0; renderLog(); }
+function setCardioPick(idx) { cardioPickIdx = idx; renderLog(); }
 function clearOverride() { appState.customDayOverride = null; pendingModifiedWorkout = null; logSets = {}; warmupState = {}; renderLog(); }
 
 function renderLog() {
@@ -2235,7 +2242,17 @@ function renderLog() {
       </div>`;
   })() : '';
 
-  list.innerHTML = warmupHtml + day.exercises.map((ex, i) => {
+  const cardioLabel = n => n === 'Incline Treadmill Walk' ? 'Incline Walk' : n === 'Flat Treadmill' ? 'Flat Walk' : n;
+  let cardioPickerHtml = '';
+  if (day.cardioOnly) {
+    const btns = day.exercises.map((ex, i) => {
+      const active = i === cardioPickIdx;
+      return `<button onclick="setCardioPick(${i})" style="padding:8px 16px;border-radius:var(--r-pill);font-size:13px;font-weight:${active ? '600' : '500'};border:1.5px solid ${active ? 'var(--sky-dk)' : 'var(--border)'};background:${active ? 'var(--sky-dk)' : '#ffffff'};color:${active ? '#ffffff' : 'var(--ink2)'};cursor:pointer;white-space:nowrap;transition:all 0.15s;">${cardioLabel(ex.name)}</button>`;
+    }).join('');
+    cardioPickerHtml = `<div style="padding:0 16px 14px;"><div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink3);margin-bottom:10px;">Choose your cardio</div><div style="display:flex;gap:7px;flex-wrap:wrap;">${btns}</div></div>`;
+  }
+  list.innerHTML = warmupHtml + cardioPickerHtml + day.exercises.map((ex, i) => {
+    if (day.cardioOnly && i !== cardioPickIdx) return '';
     const lastSessionSets = findLastSession(ex.name);
     const prev = lastSessionSets
       ? lastSessionSets.reduce((best, s) => (!best || parseFloat(s.w) > parseFloat(best.w)) ? s : best, null)
@@ -3918,6 +3935,7 @@ window.selectPhase = selectPhase;
 window.clearOverride = clearOverride;
 window.setLogPhase = setLogPhase;
 window.setLogDay = setLogDay;
+window.setCardioPick = setCardioPick;
 window.useSuggestion = useSuggestion;
 window.loadModifiedWorkout = loadModifiedWorkout;
 window.sendHomeCoachMessage = sendHomeCoachMessage;
