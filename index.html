@@ -583,6 +583,10 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
   animation:sheetUp 0.32s cubic-bezier(0.34,1.56,0.64,1);
 }
 @keyframes sheetUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+@keyframes checkPop { 0%{transform:scale(0.2);opacity:0} 60%{transform:scale(1.18)} 100%{transform:scale(1);opacity:1} }
+@keyframes checkDraw { to { stroke-dashoffset: 0; } }
+.complete-check-ring { animation: checkPop 0.55s cubic-bezier(0.34,1.56,0.64,1) 0.12s both; }
+.complete-check-ring svg polyline { stroke-dasharray: 30; stroke-dashoffset: 30; animation: checkDraw 0.4s ease 0.55s forwards; }
 .modal-sheet h2 { font-family:'EB Garamond',Georgia,serif; font-size:34px; font-weight:500; letter-spacing:-0.2px; color:var(--charcoal); margin-bottom:4px; }
 .modal-sheet .modal-sub { font-size:14px; color:var(--ink3); margin-bottom:20px; }
 .modal-summary { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:22px; }
@@ -1208,7 +1212,10 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 
     <!-- Green header -->
     <div id="modal-header" style="background:var(--sage-dk);padding:32px 24px 24px;text-align:center;position:relative;">
-      <div style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:32px;">✓</div>
+      <div style="font-size:26px;font-weight:700;color:#fff;margin-bottom:6px;letter-spacing:-0.3px;">Well done!</div>
+      <div class="complete-check-ring" style="width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,0.22);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;">
+        <svg width="38" height="38" viewBox="0 0 38 38" fill="none"><polyline points="8,20 16,28 30,11" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
       <div style="font-family:'EB Garamond',Georgia,serif;font-size:32px;font-weight:500;color:#fff;margin-bottom:4px;letter-spacing:-0.1px;">Session Complete</div>
       <div id="modal-sub-text" style="font-size:13px;color:rgba(255,255,255,0.75);"></div>
     </div>
@@ -2383,6 +2390,21 @@ function tickSet(ei, si, restSec) {
   const hd = badge.closest('.ex-log-card')?.querySelector('.ex-log-hd');
   if (hd) hd.classList.toggle('ex-log-hd-done', all);
   if (s.done && restSec > 0) startRest(restSec);
+  if (s.done && all) {
+    setTimeout(() => {
+      const body = document.getElementById(`exbody-${ei}`);
+      if (body) body.style.display = 'none';
+      const day = appState.customDayOverride || PROGRAM[logPhase][logDay];
+      for (let n = ei + 1; n < day.exercises.length; n++) {
+        const nb = document.getElementById(`exbody-${n}`);
+        if (nb) {
+          nb.style.display = 'block';
+          nb.closest?.('.ex-log-card')?.scrollIntoView?.({ behavior:'smooth', block:'start' });
+          break;
+        }
+      }
+    }, 700);
+  }
   scheduleAutoSave();
 }
 
@@ -2526,7 +2548,50 @@ async function finishWorkout() {
   stopAutoComplete();
   appState.customDayOverride = null;
   renderLog();
+  launchConfetti();
   document.getElementById('complete-modal').classList.add('show');
+}
+
+function launchConfetti() {
+  const canvas = document.createElement('canvas');
+  canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;';
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const colors = ['#4a7c59','#6aac7e','#c8a84b','#e8d48b','#ffffff','#a8d5b5','#f0e6b2'];
+  const particles = Array.from({length:110}, () => ({
+    x: Math.random() * canvas.width,
+    y: -10 - Math.random() * 80,
+    w: 7 + Math.random() * 7,
+    h: 4 + Math.random() * 5,
+    color: colors[Math.floor(Math.random() * colors.length)],
+    vx: (Math.random() - 0.5) * 3.5,
+    vy: 2.5 + Math.random() * 3.5,
+    angle: Math.random() * Math.PI * 2,
+    spin: (Math.random() - 0.5) * 0.18,
+    alpha: 1,
+  }));
+  const start = performance.now();
+  const dur = 3800;
+  function draw(now) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const elapsed = now - start;
+    particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy; p.angle += p.spin;
+      if (elapsed > dur * 0.6) p.alpha = Math.max(0, p.alpha - 0.018);
+      ctx.save();
+      ctx.globalAlpha = p.alpha;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.angle);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      ctx.restore();
+    });
+    if (elapsed < dur) requestAnimationFrame(draw);
+    else canvas.remove();
+  }
+  requestAnimationFrame(draw);
 }
 
 function closeModal() {
