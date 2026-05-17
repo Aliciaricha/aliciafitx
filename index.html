@@ -1315,7 +1315,7 @@ const PROGRAM = {
     exercises:[
       {name:"Hip Thrust",type:"Compound",sets:4,reps:"10 reps",rest:REST.compound,note:"Barbell on floor, pad over hips, upper back against flat bench. Drive through heels, squeeze at top 1 sec. +2.5kg when all 4 sets clean.",key:true},
       {name:"Squat",type:"Compound",sets:3,reps:"8 reps",rest:REST.compound,note:"Elevated heel goblet squat — heels on two 2.5–5kg plates, single DB at chest. Heel raise deepens quad stimulus and removes ankle mobility limits. +2kg when 3×8 clean."},
-      {name:"Romanian Deadlift",type:"Compound",sets:3,reps:"10 reps",rest:REST.compound,note:"Barbell on floor. Standard RDL — hip hinge, feel hamstrings load throughout. +2.5kg when all 3 sets clean."},
+      {name:"Barbell Romanian Deadlift",type:"Compound",sets:3,reps:"10 reps",rest:REST.compound,note:"Barbell on floor. Standard RDL — hip hinge, feel hamstrings load throughout. +2.5kg when all 3 sets clean."},
       {name:"Machine Hip Abduction",type:"Accessory",sets:3,reps:"12 reps",rest:REST.accessory,note:"Cable hip abduction — low pulley, ankle attachment, stand sideways to stack. 3×12 each leg. +2.5kg when form is solid."},
       {name:"Dead Bug",type:"Core",sets:3,reps:"45 sec",rest:REST.circuit,note:"Lower back flat on floor. Add 5 sec each session: 45→50→55→60 sec. Once at 60 sec consistently, progress to single leg + opposite arm extension."},
     ]},
@@ -1341,7 +1341,7 @@ const PROGRAM = {
     ],
     exercises:[
       {name:"Hip Thrust",type:"Compound",sets:4,reps:"10 reps",rest:REST.compound,note:"Same setup as Monday — same weight, same progression. Both sessions move up together. +2.5kg when all 4 sets clean.",key:true},
-      {name:"Staggered Stance RDL",type:"Compound",sets:3,reps:"10 reps/leg",rest:REST.compound,note:"DBs in hand, rear foot slightly back for balance. 3×10 per leg. +2kg when both legs clean."},
+      {name:"Dumbbell Staggered Stance RDL",type:"Compound",sets:3,reps:"10 reps/leg",rest:REST.compound,note:"Dumbbells in hand, rear foot slightly back for balance — single-leg emphasis version of the Romanian Deadlift. 3×10 per leg. +2kg when both legs clean."},
       {name:"DB Bulgarian Split Squat",type:"Compound",sets:3,reps:"10 reps/leg",rest:REST.compound,note:"Rear foot elevated on flat bench, DBs in hand. Drive through front heel. +2kg when both legs clean."},
       {name:"Cable Glute Kickback",type:"Accessory",sets:3,reps:"12 reps/leg",rest:REST.accessory,note:"Low pulley, ankle attachment. 3×12 per leg. Full extension and squeeze every rep. +2.5kg when form is solid."},
       {name:"Hollow Body Hold",type:"Core",sets:3,reps:"30 sec",rest:REST.circuit,note:"Lower back flat on floor, arms and legs extended. +5 sec each session until 45 sec target."},
@@ -1418,6 +1418,8 @@ let appState = {
 };
 
 let logPhase = 1, logDay = 'mon', logSets = {}, progPhase = 1;
+let customExercises = []; // exercises added by user during a session
+let showAddExForm = false;
 let warmupState = {}; // { wi: true/false } — persists across page navigation
 let restTimer = null, restTotal = 0, restLeft = 0;
 let calYear = new Date().getFullYear(), calMonth = new Date().getMonth();
@@ -1637,6 +1639,46 @@ async function saveWorkout(entry) {
   if (error) { showSync('error', 'Save failed — try again'); console.error(error); return null; }
   showSync('saved', 'Session saved ✓');
   return data.id;
+}
+
+async function updateWorkout(id, entry) {
+  if (window.PREVIEW_MODE) return true;
+  showSync('syncing', 'Merging sessions…');
+  const { error } = await sb.from('workouts').update({
+    sets_data: entry.sets,
+    total_sets: entry.totalSets,
+    vol: entry.vol,
+    ts: entry.ts,
+  }).eq('id', id);
+  if (error) { showSync('error', 'Merge failed'); console.error(error); return false; }
+  showSync('saved', 'Sessions merged ✓');
+  return true;
+}
+
+function mergeWorkoutSets(existingSets, newSets) {
+  // Find highest set index per exercise in the existing record
+  const maxSiByEx = {};
+  for (const k in existingSets) {
+    const [ei, si] = k.split('_').map(Number);
+    if (maxSiByEx[ei] === undefined || si > maxSiByEx[ei]) maxSiByEx[ei] = si;
+  }
+  // Group new sets by exercise index, sorted
+  const newByEx = {};
+  for (const k in newSets) {
+    const [ei, si] = k.split('_').map(Number);
+    if (!newByEx[ei]) newByEx[ei] = [];
+    newByEx[ei].push({ si, data: newSets[k] });
+  }
+  const merged = { ...existingSets };
+  for (const eiStr in newByEx) {
+    const ei = parseInt(eiStr);
+    const nextSi = maxSiByEx[ei] !== undefined ? maxSiByEx[ei] + 1 : 0;
+    newByEx[eiStr].sort((a, b) => a.si - b.si).forEach((item, idx) => {
+      merged[`${ei}_${nextSi + idx}`] = item.data;
+    });
+    maxSiByEx[ei] = nextSi + newByEx[eiStr].length - 1;
+  }
+  return merged;
 }
 
 async function saveFoodItem(item, dateKey) {
@@ -2105,6 +2147,8 @@ const DEFAULT_TARGETS = [
   { exercise: "Barbell Hip Thrust",            target_weight: "70–90kg plates", note: "You're using a plate-loaded hip thrust machine — the lever arm means each kg loaded feels ~15–20% harder than barbell. 70–90kg on the machine = equivalent to 100–120kg barbell. Start where you are and add 5kg per week." },
   { exercise: "Squat",                         target_weight: "70–80kg",        note: "Advanced female squat ~1.2× bodyweight. 70kg is strong and achievable." },
   { exercise: "Romanian Deadlift",             target_weight: "60–75kg",        note: "Should feel heavy with a deep hamstring stretch. 70kg is the goal." },
+  { exercise: "Barbell Romanian Deadlift",     target_weight: "60–75kg",        note: "Monday barbell RDL — hip hinge with barbell on floor. Deep hamstring stretch every rep. 70kg is the goal. +2.5kg when all 3 sets clean." },
+  { exercise: "Dumbbell Staggered Stance RDL", target_weight: "50–60kg",        note: "Wednesday dumbbell single-leg RDL — DBs in hand, rear foot slightly back. Expect less weight than barbell bilateral. +2kg when both legs clean." },
   { exercise: "Barbell Lunge",                 target_weight: "30–40kg",        note: "Barbell on back. 40kg per leg is advanced level." },
   { exercise: "Barbell Bent Over Row",         target_weight: "45–55kg",        note: "Strict form. 50kg for clean reps is very strong for women." },
   { exercise: "Box Squat",                     target_weight: "60–70kg",        note: "Pause on box. Slightly less than free squat — 65kg is the target." },
@@ -2146,6 +2190,7 @@ const DEFAULT_TARGETS = [
   { exercise: "Banded Glute Bridge",           target_weight: "band only",      note: "Band tension is the load. Push knees out against the band hard." },
   { exercise: "Hip Thrust Pulse",              target_weight: "same bar",       note: "Use same barbell as the main hip thrust set." },
   { exercise: "Staggered Stance RDL",          target_weight: "50–60kg",        note: "DBs in hand, rear foot slightly back. +2kg per session when both legs clean." },
+  { exercise: "Dumbbell Romanian Deadlift",    target_weight: "24–32kg",        note: "Per dumbbell. Hip hinge with DBs, full hamstring stretch. +2kg when all sets clean." },
   { exercise: "RDL — Staggered Stance",        target_weight: "50–60kg",        note: "Single leg emphasis — expect less than bilateral RDL." },
   { exercise: "Weighted Crunch",               target_weight: "10–15kg",        note: "Plate at chest. 12kg is strong for weighted crunches." },
   { exercise: "Chair Leg Raise",               target_weight: "bodyweight",     note: "Add ankle weights (2–4kg) once bodyweight feels easy." },
@@ -2188,10 +2233,15 @@ function renderLogSelectors() {
   }).join('');
 }
 
-function setLogPhase(p) { logPhase = p; logSets = {}; warmupState = {}; cardioPickIdx = 0; renderLog(); }
-function setLogDay(k) { logDay = k; logSets = {}; warmupState = {}; cardioPickIdx = 0; renderLog(); }
+function setLogPhase(p) { logPhase = p; logSets = {}; warmupState = {}; cardioPickIdx = 0; customExercises = []; showAddExForm = false; renderLog(); }
+function setLogDay(k) { logDay = k; logSets = {}; warmupState = {}; cardioPickIdx = 0; customExercises = []; showAddExForm = false; renderLog(); }
 function setCardioPick(idx) { cardioPickIdx = idx; renderLog(); }
-function clearOverride() { appState.customDayOverride = null; pendingModifiedWorkout = null; logSets = {}; warmupState = {}; renderLog(); }
+function clearOverride() { appState.customDayOverride = null; pendingModifiedWorkout = null; logSets = {}; warmupState = {}; customExercises = []; showAddExForm = false; renderLog(); }
+
+function getCurrentExercises() {
+  const day = appState.customDayOverride || PROGRAM[logPhase][logDay];
+  return [...day.exercises, ...customExercises];
+}
 
 function renderLog() {
   renderLogSelectors();
@@ -2251,6 +2301,104 @@ function renderLog() {
     }).join('');
     cardioPickerHtml = `<div style="padding:0 16px 14px;"><div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink3);margin-bottom:10px;">Choose your cardio</div><div style="display:flex;gap:7px;flex-wrap:wrap;">${btns}</div></div>`;
   }
+  const baseOffset = day.exercises.length;
+  const customExHtml = customExercises.map((ex, ci) => {
+    const i = baseOffset + ci;
+    const lastSessionSets = findLastSession(ex.name);
+    const prev = lastSessionSets
+      ? lastSessionSets.reduce((best, s) => (!best || parseFloat(s.w) > parseFloat(best.w)) ? s : best, null)
+      : findPrev(history, ex.name);
+    if (!logSets[i]) {
+      logSets[i] = Array.from({ length: ex.sets }, () => ({ w: '', r: '', done: false }));
+    }
+    const done = logSets[i].filter(s => s.done).length;
+    const all = done === ex.sets;
+    const timed = timedMode(ex);
+    const isTimedEx = timed !== null;
+    const restLabel = ex.cardio ? '' : `Rest between sets: ${ex.rest}s`;
+    const durationLabel = timed === 'minutes' ? 'Duration (min)' : 'Duration (sec)';
+    const durationPlaceholder = timed === 'minutes' ? 'min' : 'sec';
+    return `
+      <div class="ex-log-card" style="border-color:var(--sky-dk);border-width:1.5px;">
+        <div class="ex-log-hd ${all ? 'ex-log-hd-done' : ''}" onclick="toggleExLog(${i})">
+          <div>
+            <div class="ex-log-title">${ex.name} <span class="chip" style="background:var(--sky-bg);color:var(--sky-dk);font-size:10px;padding:2px 7px;border-radius:50px;">Custom</span></div>
+            <div class="ex-log-sub">${ex.type} · ${ex.sets} sets · ${ex.reps}</div>
+          </div>
+          <div class="ex-progress-badge ${all ? 'complete' : ''}" id="badge-${i}">${done}/${ex.sets}</div>
+        </div>
+        <div class="ex-log-body" id="exbody-${i}" style="display:block;">
+          ${restLabel ? `<div style="margin:0 0 12px;"><span style="display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:5px;background:#fdf0e8;color:#b86020;font-size:11.5px;font-weight:600;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Rest: ${ex.rest}s
+          </span></div>` : ''}
+          <div class="set-col-hds ${isTimedEx ? 'timed' : 'no-vol'}">
+            <div></div>
+            ${isTimedEx
+              ? `<div class="set-col-hd" style="grid-column:2/4">${durationLabel}</div>`
+              : `<div class="set-col-hd">Weight (kg)</div><div class="set-col-hd">Reps</div>`
+            }
+            <div></div>
+          </div>
+          ${logSets[i].map((s, si) => isTimedEx ? `
+            <div class="set-row timed-row" id="sr-${i}-${si}">
+              <div class="set-num">S${si + 1}</div>
+              <input class="set-inp ${s.done ? 'done-inp' : ''}" type="number" placeholder="${durationPlaceholder}" value="${s.r || ''}"
+                onchange="updSet(${i},${si},'r',this.value)" inputmode="numeric">
+              <div class="set-check ${s.done ? 'done' : ''}" id="chk-${i}-${si}" onclick="tickSet(${i},${si},${ex.rest})">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+            </div>` : `
+            <div class="set-row no-vol-row" id="sr-${i}-${si}">
+              <div class="set-num">S${si + 1}</div>
+              <input class="set-inp ${s.done ? 'done-inp' : ''}" type="number" placeholder="kg" value="${s.w || ''}" onchange="updSet(${i},${si},'w',this.value)" inputmode="decimal">
+              <input class="set-inp ${s.done ? 'done-inp' : ''}" type="number" placeholder="reps" value="${s.r || ''}" onchange="updSet(${i},${si},'r',this.value)" inputmode="numeric">
+              <div class="set-check ${s.done ? 'done' : ''}" id="chk-${i}-${si}" onclick="tickSet(${i},${si},${ex.rest})">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+            </div>`).join('')}
+          ${prev ? `<div class="prev-best">${isTimedEx ? `Last session: ${prev.r} ${timed === 'minutes' ? 'min' : 'sec'}` : `Last session: ${prev.w}kg × ${prev.r} reps`}</div>` : ''}
+          <button class="add-set-btn" onclick="addSet(${i})">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add set
+          </button>
+        </div>
+      </div>`;
+  }).join('');
+
+  const addExFormHtml = showAddExForm ? `
+    <div class="ex-log-card" style="border:1.5px dashed var(--border);">
+      <div style="padding:16px;">
+        <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:14px;">Add Custom Exercise</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <input id="cex-name" type="text" placeholder="Exercise name (e.g. Leg Press)" inputmode="text"
+            style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:14px;font-family:inherit;box-sizing:border-box;background:#fff;color:var(--ink);">
+          <select id="cex-type" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:14px;font-family:inherit;background:#fff;color:var(--ink);-webkit-appearance:none;appearance:none;">
+            <option value="Compound">Compound</option>
+            <option value="Accessory" selected>Accessory</option>
+            <option value="Core">Core</option>
+            <option value="Cardio">Cardio</option>
+          </select>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <input id="cex-sets" type="number" placeholder="Sets (e.g. 3)" inputmode="numeric" min="1" max="10"
+              style="padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:14px;font-family:inherit;background:#fff;color:var(--ink);">
+            <input id="cex-reps" type="text" placeholder="Reps (e.g. 12)" inputmode="text"
+              style="padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:14px;font-family:inherit;background:#fff;color:var(--ink);">
+          </div>
+          <div style="display:flex;gap:10px;margin-top:4px;">
+            <button onclick="submitCustomEx()" style="flex:1;padding:11px;border-radius:var(--r-sm);border:none;background:var(--green);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">Add Exercise</button>
+            <button onclick="hideAddExFormFn()" style="padding:11px 16px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:#fff;color:var(--ink2);font-size:14px;cursor:pointer;font-family:inherit;">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>` : `
+    <div style="padding:4px 0 16px;">
+      <button onclick="showAddExFormFn()" style="width:100%;padding:12px;border-radius:var(--r-sm);border:1.5px dashed var(--border);background:transparent;color:var(--ink3);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add custom exercise
+      </button>
+    </div>`;
+
   list.innerHTML = warmupHtml + cardioPickerHtml + day.exercises.map((ex, i) => {
     if (day.cardioOnly && i !== cardioPickIdx) return '';
     const lastSessionSets = findLastSession(ex.name);
@@ -2340,7 +2488,22 @@ function renderLog() {
           </button>
         </div>
       </div>`;
-  }).join('');
+  }).join('') + customExHtml + addExFormHtml;
+}
+
+function showAddExFormFn() { showAddExForm = true; renderLog(); }
+function hideAddExFormFn() { showAddExForm = false; renderLog(); }
+
+function submitCustomEx() {
+  const name = (document.getElementById('cex-name')?.value || '').trim();
+  const type = document.getElementById('cex-type')?.value || 'Accessory';
+  const sets = parseInt(document.getElementById('cex-sets')?.value) || 3;
+  const reps = (document.getElementById('cex-reps')?.value || '').trim() || '10 reps';
+  if (!name) { document.getElementById('cex-name')?.focus(); return; }
+  const restMap = { Compound: 90, Accessory: 60, Core: 30, Cardio: 0 };
+  customExercises.push({ name, type, sets, reps, rest: restMap[type] || 60, note: '', key: false, cardio: type === 'Cardio' });
+  showAddExForm = false;
+  renderLog();
 }
 
 function toggleExLog(i) {
@@ -2397,13 +2560,12 @@ function tickSet(ei, si, restSec) {
   document.getElementById(`chk-${ei}-${si}`).classList.toggle('done', s.done);
   const row = document.getElementById(`sr-${ei}-${si}`);
   row.querySelectorAll('.set-inp:not([readonly])').forEach(inp => inp.classList.toggle('done-inp', s.done));
-  const day = PROGRAM[logPhase][logDay];
+  const allEx = getCurrentExercises();
   const done = logSets[ei].filter(x => x.done).length;
-  const all = done === day.exercises[ei].sets;
+  const all = done === allEx[ei].sets;
   const badge = document.getElementById(`badge-${ei}`);
-  badge.textContent = `${done}/${day.exercises[ei].sets}`;
+  badge.textContent = `${done}/${allEx[ei].sets}`;
   badge.className = `ex-progress-badge${all ? ' complete' : ''}`;
-  // Green header when all sets done
   const hd = badge.closest('.ex-log-card')?.querySelector('.ex-log-hd');
   if (hd) hd.classList.toggle('ex-log-hd-done', all);
   if (s.done && restSec > 0) startRest(restSec);
@@ -2411,8 +2573,7 @@ function tickSet(ei, si, restSec) {
     setTimeout(() => {
       const body = document.getElementById(`exbody-${ei}`);
       if (body) body.style.display = 'none';
-      const day = appState.customDayOverride || PROGRAM[logPhase][logDay];
-      for (let n = ei + 1; n < day.exercises.length; n++) {
+      for (let n = ei + 1; n < allEx.length; n++) {
         const nb = document.getElementById(`exbody-${n}`);
         if (nb) {
           nb.style.display = 'block';
@@ -2459,9 +2620,10 @@ function findLastSession(name) {
 
 async function finishWorkout() {
   const day = (appState.customDayOverride) ? appState.customDayOverride : PROGRAM[logPhase][logDay];
+  const allExercises = [...day.exercises, ...customExercises];
   let totalSets = 0, totalReps = 0, totalVol = 0;
   const sets = {};
-  day.exercises.forEach((ex, i) => {
+  allExercises.forEach((ex, i) => {
     const timed = timedMode(ex) !== null;
     (logSets[i] || []).forEach((set, si) => {
       if (set.done || set.w || set.r) {
@@ -2478,23 +2640,48 @@ async function finishWorkout() {
   });
 
   // Total possible sets in this session
-  const totalPossible = day.exercises.reduce((n, ex) => n + (ex.sets || 1), 0);
+  const totalPossible = allExercises.reduce((n, ex) => n + (ex.sets || 1), 0);
   const completionPct = totalPossible > 0 ? Math.round((totalSets / totalPossible) * 100) : 100;
 
-  const entry = {
+  let entry = {
     ts: Date.now(), phase: logPhase, dayKey: logDay,
     dayName: day.name, focus: day.focus, sets,
     totalSets, vol: Math.round(totalVol),
   };
 
-  const id = await saveWorkout(entry);
-  if (id) entry.id = id;
-  appState.workoutHistory.push(entry);
+  // Merge with existing same-day workout if one exists
+  const today = new Date();
+  const isSameDay = (h) => {
+    const dt = new Date(h.ts);
+    return dt.getDate() === today.getDate() &&
+           dt.getMonth() === today.getMonth() &&
+           dt.getFullYear() === today.getFullYear() &&
+           h.dayKey === logDay;
+  };
+  const existingEntry = appState.workoutHistory.find(isSameDay);
+  if (existingEntry) {
+    const mergedSets = mergeWorkoutSets(existingEntry.sets, entry.sets);
+    const mergedEntry = {
+      ...existingEntry,
+      sets: mergedSets,
+      totalSets: existingEntry.totalSets + entry.totalSets,
+      vol: existingEntry.vol + entry.vol,
+      ts: entry.ts,
+    };
+    await updateWorkout(existingEntry.id, mergedEntry);
+    const idx = appState.workoutHistory.indexOf(existingEntry);
+    appState.workoutHistory[idx] = mergedEntry;
+    entry = mergedEntry;
+  } else {
+    const id = await saveWorkout(entry);
+    if (id) entry.id = id;
+    appState.workoutHistory.push(entry);
+  }
 
   // Check PBs BEFORE updating them so we can show what's new
   const newPBs = [];
   const pbPromises = [];
-  day.exercises.forEach((ex, i) => {
+  allExercises.forEach((ex, i) => {
     (logSets[i] || []).forEach(set => {
       if (set.w && set.r) {
         const existing = appState.pbs[ex.name];
@@ -2538,7 +2725,7 @@ async function finishWorkout() {
   }
 
   // Exercise breakdown — one row per exercise with all sets
-  const summaryLines = day.exercises.map((ex, i) => {
+  const summaryLines = allExercises.map((ex, i) => {
     const doneSets = (logSets[i] || []).filter(s => s.done || s.w || s.r);
     if (!doneSets.length) return null;
     const timed = isTimed(ex);
@@ -2561,6 +2748,8 @@ async function finishWorkout() {
   const logSetsCopy = JSON.parse(JSON.stringify(logSets)); // keep for display only
   logSets = {};
   warmupState = {};
+  customExercises = [];
+  showAddExForm = false;
   clearDraft();
   stopAutoComplete();
   appState.customDayOverride = null;
