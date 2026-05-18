@@ -569,6 +569,8 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 .pb-card .pb-ex  { font-size:11px; color:var(--ink3); margin-bottom:4px; }
 .pb-card .pb-val { font-family:'DM Mono', monospace; font-size:22px; font-weight:500; color:var(--charcoal); }
 .pb-card .pb-unit{ font-size:11px; color:var(--ink3); }
+.vol-tab { padding:5px 13px; border-radius:50px; font-size:11.5px; font-weight:500; border:1.5px solid var(--border); background:#fff; color:var(--ink2); cursor:pointer; font-family:inherit; transition:all 0.15s; white-space:nowrap; }
+.vol-tab-active { background:var(--charcoal); color:#fff; border-color:var(--charcoal); font-weight:600; }
 
 /* ═══ MODAL ══════════════════════════════════════════════════════ */
 .modal-overlay { position:fixed; inset:0; z-index:300; background:rgba(24,22,42,0.4); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); display:none; align-items:flex-end; justify-content:center; }
@@ -1158,6 +1160,31 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
   </div>
   <div style="height:14px"></div>
 
+  <!-- Volume Chart -->
+  <div class="section-label" style="margin-top:0;">Training Volume</div>
+  <div style="background:#fff;border:1px solid var(--border);border-radius:var(--r);margin:0 16px 4px;overflow:hidden;">
+    <div style="padding:16px 16px 0;display:flex;align-items:flex-start;justify-content:space-between;">
+      <div>
+        <div style="font-size:10px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:var(--ink3);">Total kg lifted</div>
+        <div id="vol-chart-headline" style="font-size:26px;font-weight:700;font-family:'DM Mono',monospace;color:var(--charcoal);line-height:1.15;margin-top:5px;">—</div>
+        <div id="vol-chart-sub" style="font-size:11px;color:var(--ink3);margin-top:2px;min-height:15px;"></div>
+      </div>
+      <div id="vol-chart-delta" style="font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:50px;margin-top:4px;"></div>
+    </div>
+    <div style="display:flex;gap:6px;padding:12px 16px 8px;flex-wrap:wrap;">
+      <button onclick="setVolChartMode('volume')" id="vcm-volume" class="vol-tab vol-tab-active">Volume</button>
+      <button onclick="setVolChartMode('trend')" id="vcm-trend" class="vol-tab">+ Trend</button>
+      <button onclick="setVolChartMode('focus')" id="vcm-focus" class="vol-tab">By Day</button>
+    </div>
+    <div id="vol-focus-row" style="display:none;gap:6px;padding:0 16px 10px;flex-wrap:wrap;"></div>
+    <div style="padding:0 16px 4px;"><canvas id="volume-chart" style="display:block;"></canvas></div>
+    <div style="display:flex;gap:6px;padding:10px 16px 14px;border-top:1px solid var(--border);">
+      <button onclick="setVolChartRange('4w')" id="vcr-4w" class="vol-tab">4 weeks</button>
+      <button onclick="setVolChartRange('3m')" id="vcr-3m" class="vol-tab vol-tab-active">3 months</button>
+      <button onclick="setVolChartRange('all')" id="vcr-all" class="vol-tab">All time</button>
+    </div>
+  </div>
+
   <!-- Personal Bests -->
   <div class="section-label">Personal Bests</div>
   <div class="pb-grid" id="pb-grid"></div>
@@ -1431,6 +1458,9 @@ let autoSaveTimer = null, autoCompleteTimer = null;
 const AUTO_COMPLETE_MS = 20 * 60 * 1000;
 let homeCoachHistory = [];
 let cardioPickIdx = 0;
+let volumeChartRange = '3m'; // '4w' | '3m' | 'all'
+let volumeChartMode = 'volume'; // 'volume' | 'trend' | 'focus'
+let volumeChartFocus = 'all'; // 'all' | 'mon' | 'tue' | 'wed' | 'thu' | 'sat' | 'sun'
 
 /* ═══════════════════════════════════════════════════════
    SYNC UI
@@ -3556,9 +3586,226 @@ async function saveMetrics() {
   renderProgress();
 }
 
+/* ═══════════════════════════════════════════════════════
+   VOLUME CHART
+═══════════════════════════════════════════════════════ */
+function setVolChartMode(mode) {
+  volumeChartMode = mode;
+  document.querySelectorAll('[id^="vcm-"]').forEach(b => b.classList.remove('vol-tab-active'));
+  const btn = document.getElementById('vcm-' + mode);
+  if (btn) btn.classList.add('vol-tab-active');
+  renderVolumeChart();
+}
+
+function setVolChartRange(range) {
+  volumeChartRange = range;
+  document.querySelectorAll('[id^="vcr-"]').forEach(b => b.classList.remove('vol-tab-active'));
+  const btn = document.getElementById('vcr-' + range);
+  if (btn) btn.classList.add('vol-tab-active');
+  renderVolumeChart();
+}
+
+function setVolChartFocus(key) {
+  volumeChartFocus = key;
+  renderVolumeChart();
+}
+
+function renderVolumeChart() {
+  const canvas = document.getElementById('volume-chart');
+  if (!canvas) return;
+
+  const focusRow = document.getElementById('vol-focus-row');
+
+  // Render by-day filter pills
+  if (volumeChartMode === 'focus') {
+    const days = [
+      { k: 'all', n: 'All days' },
+      { k: 'mon', n: 'Mon — Glutes' },
+      { k: 'wed', n: 'Wed — Glutes' },
+      { k: 'sat', n: 'Sat — Glutes' },
+      { k: 'tue', n: 'Tue — Back' },
+      { k: 'sun', n: 'Sun — Push' },
+      { k: 'thu', n: 'Thu — Cardio' },
+    ];
+    if (focusRow) {
+      focusRow.style.display = 'flex';
+      focusRow.innerHTML = days.map(d => {
+        const active = volumeChartFocus === d.k;
+        return `<button onclick="setVolChartFocus('${d.k}')" style="padding:4px 11px;border-radius:50px;font-size:11px;font-weight:${active ? '600' : '500'};border:1.5px solid ${active ? 'var(--sky-dk)' : 'var(--border)'};background:${active ? 'var(--sky-dk)' : '#fff'};color:${active ? '#fff' : 'var(--ink2)'};cursor:pointer;font-family:inherit;white-space:nowrap;">${d.n}</button>`;
+      }).join('');
+    }
+  } else {
+    if (focusRow) focusRow.style.display = 'none';
+  }
+
+  // Build dataset — sorted ascending by date
+  const allHistory = [...(appState.workoutHistory || [])].sort((a, b) => a.ts - b.ts);
+
+  // Time range cutoff
+  const now = Date.now();
+  const cutoff = volumeChartRange === '4w' ? now - 28 * 86400000
+               : volumeChartRange === '3m' ? now - 90 * 86400000
+               : 0;
+
+  let data = allHistory.filter(h => h.ts >= cutoff && (h.vol || 0) > 0);
+  if (volumeChartMode === 'focus' && volumeChartFocus !== 'all') {
+    data = data.filter(h => h.dayKey === volumeChartFocus);
+  }
+
+  // Headline stat
+  const headlineEl = document.getElementById('vol-chart-headline');
+  const subEl      = document.getElementById('vol-chart-sub');
+  const deltaEl    = document.getElementById('vol-chart-delta');
+
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.parentElement.clientWidth;
+  const H = 180;
+  canvas.width  = W * dpr; canvas.height = H * dpr;
+  canvas.style.width  = W + 'px'; canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+
+  if (!data.length) {
+    ctx.fillStyle = 'rgba(158,162,171,0.75)';
+    ctx.font = '13px -apple-system, Helvetica Neue, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('No sessions in this range yet', W / 2, H / 2);
+    if (headlineEl) headlineEl.textContent = '—';
+    if (subEl) subEl.textContent = '';
+    if (deltaEl) { deltaEl.textContent = ''; deltaEl.style.background = 'none'; deltaEl.style.color = ''; }
+    return;
+  }
+
+  const latest = data[data.length - 1];
+  const prevPt = data.length > 1 ? data[data.length - 2] : null;
+  if (headlineEl) headlineEl.textContent = Math.round(latest.vol).toLocaleString() + ' kg';
+  if (subEl) subEl.textContent = 'Latest · ' + new Date(latest.ts).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  if (deltaEl && prevPt) {
+    const pct = ((latest.vol - prevPt.vol) / prevPt.vol) * 100;
+    const up = pct >= 0;
+    deltaEl.textContent = (up ? '↑ ' : '↓ ') + Math.abs(pct).toFixed(0) + '%';
+    deltaEl.style.background = up ? 'var(--sage-bg)' : 'var(--rose-bg)';
+    deltaEl.style.color = up ? 'var(--sage-dk)' : 'var(--rose-dk)';
+  } else if (deltaEl) {
+    deltaEl.textContent = '';
+    deltaEl.style.background = 'none';
+  }
+
+  // Rolling 7-session average
+  const rolling = data.map((_, i) => {
+    const win = data.slice(Math.max(0, i - 6), i + 1);
+    return win.reduce((s, d) => s + d.vol, 0) / win.length;
+  });
+
+  // Layout constants
+  const PAD_L = 46, PAD_R = 12, PAD_T = 12, PAD_B = 26;
+  const vols = data.map(d => d.vol);
+  const minY = Math.max(0, Math.min(...vols) * 0.82);
+  const maxY = Math.max(...vols) * 1.1;
+  const minX = data[0].ts;
+  const maxX = data.length > 1 ? data[data.length - 1].ts : minX + 1;
+  const tx = x => PAD_L + ((x - minX) / (maxX - minX)) * (W - PAD_L - PAD_R);
+  const ty = y => PAD_T + (1 - (y - minY) / (maxY - minY || 1)) * (H - PAD_T - PAD_B);
+
+  // Y-axis grid + labels
+  const gridCount = 4;
+  for (let i = 0; i <= gridCount; i++) {
+    const y  = PAD_T + (i / gridCount) * (H - PAD_T - PAD_B);
+    const val = maxY - (i / gridCount) * (maxY - minY);
+    ctx.strokeStyle = 'rgba(0,0,0,0.05)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(PAD_L, y); ctx.lineTo(W - PAD_R, y); ctx.stroke();
+    ctx.fillStyle = 'rgba(158,162,171,0.85)';
+    ctx.font = '9.5px DM Mono, monospace';
+    ctx.textAlign = 'right';
+    const label = val >= 1000 ? (val / 1000).toFixed(1) + 'k' : Math.round(val) + '';
+    ctx.fillText(label, PAD_L - 5, y + 4);
+  }
+
+  // X-axis date labels — max 5, evenly spaced
+  const maxLabels = Math.min(5, data.length);
+  const labelStep = Math.max(1, Math.floor((data.length - 1) / (maxLabels - 1)));
+  ctx.fillStyle = 'rgba(158,162,171,0.9)';
+  ctx.font = '9.5px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  for (let i = 0; i < data.length; i += labelStep) {
+    ctx.fillText(
+      new Date(data[i].ts).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
+      tx(data[i].ts), H - 5
+    );
+  }
+
+  if (data.length === 1) {
+    const x = tx(data[0].ts), y = ty(data[0].vol);
+    ctx.fillStyle = '#4a8c62';
+    ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(x, y, 2.5, 0, Math.PI * 2); ctx.fill();
+    return;
+  }
+
+  // Gradient fill under main line
+  const grad = ctx.createLinearGradient(0, PAD_T, 0, H - PAD_B);
+  grad.addColorStop(0, 'rgba(74,140,98,0.16)');
+  grad.addColorStop(1, 'rgba(74,140,98,0.0)');
+  ctx.beginPath();
+  data.forEach((d, i) => { i === 0 ? ctx.moveTo(tx(d.ts), ty(d.vol)) : ctx.lineTo(tx(d.ts), ty(d.vol)); });
+  ctx.lineTo(tx(data[data.length - 1].ts), H - PAD_B);
+  ctx.lineTo(tx(data[0].ts), H - PAD_B);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Main volume line
+  ctx.beginPath();
+  ctx.strokeStyle = '#4a8c62';
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  ctx.setLineDash([]);
+  data.forEach((d, i) => { i === 0 ? ctx.moveTo(tx(d.ts), ty(d.vol)) : ctx.lineTo(tx(d.ts), ty(d.vol)); });
+  ctx.stroke();
+
+  // Rolling average overlay — trend mode only
+  if (volumeChartMode === 'trend') {
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(36,80,160,0.65)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 4]);
+    rolling.forEach((avg, i) => { i === 0 ? ctx.moveTo(tx(data[i].ts), ty(avg)) : ctx.lineTo(tx(data[i].ts), ty(avg)); });
+    ctx.stroke();
+    ctx.setLineDash([]);
+    // Trend legend
+    ctx.fillStyle = 'rgba(36,80,160,0.7)';
+    ctx.font = '10px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('─ ─  7-session avg', PAD_L + 4, PAD_T + 12);
+  }
+
+  // Data point dots — colour by change vs previous
+  data.forEach((d, i) => {
+    const prev = i > 0 ? data[i - 1].vol : d.vol;
+    const drop  = d.vol < prev * 0.88; // >12% drop
+    const gain  = i > 0 && d.vol >= prev * 1.12; // >12% gain
+    const color = drop ? '#c0304f' : gain ? '#167a49' : '#4a8c62';
+    const r     = (drop || gain) ? 5 : 4;
+    const x = tx(d.ts), y = ty(d.vol);
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(x, y, r - 2, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(x, y, r - 3.5, 0, Math.PI * 2); ctx.fill();
+  });
+}
+
 function renderProgress() {
+  renderVolumeChart();
+
   // ── Personal Bests ──────────────────────────────────
-  const KEY_LIFTS = ['Hip Thrust','Romanian Deadlift','Squat','DB Bulgarian Split Squat','Wide Grip Lat Pulldown','Dumbbell Bench Press','Seated Arnold Press','Cable Glute Kickback','Staggered Stance RDL'];
+  const KEY_LIFTS = ['Hip Thrust','Barbell Romanian Deadlift','Squat','DB Bulgarian Split Squat','Wide Grip Lat Pulldown','Dumbbell Bench Press','Seated Arnold Press','Cable Glute Kickback','Dumbbell Staggered Stance RDL'];
   const pbs = appState.pbs || {};
   document.getElementById('pb-grid').innerHTML = KEY_LIFTS.map(l => {
     const tgt = getTarget(l);
