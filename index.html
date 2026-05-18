@@ -1382,7 +1382,7 @@ const PROGRAM = {
     ],
     exercises:[
       {name:"Lateral Band Walks",type:"Accessory",sets:3,reps:"15 steps each direction",rest:REST.accessory,note:"Band just above knees. Stay low throughout — slight squat position, don't stand up between steps. 3×15 steps each direction. Primer before Hip Thrust."},
-      {name:"Hip Thrust",type:"Compound",sets:3,reps:"8 reps",rest:REST.compound,note:"Saturday is 3×8 — go heavier or add a 2 sec pause at top of each rep. +2.5kg when all 3 sets clean.",key:true},
+      {name:"Single Leg Dumbbell Hip Thrust",type:"Compound",sets:3,reps:"10 reps/leg",rest:REST.compound,note:"Upper back against flat bench, one dumbbell resting on the working hip. Drive through the heel of the planted foot, squeeze at the top for 1 sec. Non-working leg bent and raised. 3×10 per leg — complete all reps on one side before switching. +2kg when both legs are clean.",key:true},
       {name:"Hyperextension",type:"Accessory",sets:4,reps:"10 reps",rest:REST.accessory,note:"Barbell good morning substitute — bar across upper back, hinge at hips until torso near parallel, squeeze glutes to return. Keep form solid. +2.5kg when form is solid."},
       {name:"DB Sumo Squat",type:"Accessory",sets:3,reps:"10 reps",rest:REST.accessory,note:"Single heavy dumbbell held vertically between legs, wide stance, toes out. Deep as possible. +2kg when all 3 sets clean."},
       {name:"Cable Hip Extension (Machine Hip Extension)",type:"Accessory",sets:3,reps:"12 reps/side",rest:REST.accessory,note:"Low pulley, ankle attachment. Single leg — slight forward lean at the hip, controlled return. Don't let the cable snap the leg back. 3×12 per leg. Moderate load, prioritise feel over weight."},
@@ -2170,7 +2170,8 @@ function timedMode(ex) {
 // At runtime getTarget() reads from appState.targets which is loaded from Supabase.
 const DEFAULT_TARGETS = [
   // Current programme — key lifts
-  { exercise: "Hip Thrust",              target_weight: "90–95kg",        note: "Add +2.5kg when all sets are clean. Mon and Wed same weight — both move up together. Sat is 3×8, go heavier or add 2 sec pause at top." },
+  { exercise: "Hip Thrust",              target_weight: "90–95kg",        note: "Add +2.5kg when all sets are clean. Mon and Wed same weight — both move up together." },
+  { exercise: "Single Leg Dumbbell Hip Thrust", target_weight: "20–30kg", note: "Saturday unilateral key lift. Expect significantly less than bilateral — 20kg DB is a solid start, build to 30kg. +2kg when both legs are clean for 3×10." },
   { exercise: "Wide Grip Lat Pulldown",  target_weight: "45–55kg",        note: "+2.5kg per session when all 4 sets are clean." },
   { exercise: "Wide Grip Pull Down",     target_weight: "45–55kg",        note: "+2.5kg per session when all 4 sets are clean." },
   { exercise: "Squat",                   target_weight: "32kg",           note: "Elevated heel goblet squat with single DB. +2kg per session when 3×8 clean." },
