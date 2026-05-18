@@ -1639,6 +1639,9 @@ async function loadFromSupabase() {
       }
     }
 
+    // Merge any same-day duplicates that exist in the database
+    await mergeDuplicates();
+
     // Start date
     if (appState.workoutHistory.length > 0) {
       appState.startDate = appState.workoutHistory[0].ts;
@@ -1712,6 +1715,61 @@ function mergeWorkoutSets(existingSets, newSets) {
     maxSiByEx[ei] = nextSi + newByEx[eiStr].length - 1;
   }
   return merged;
+}
+
+async function mergeDuplicates() {
+  const history = appState.workoutHistory;
+  if (history.length < 2) return;
+
+  // Group by calendar date (year-month-day)
+  const groups = {};
+  history.forEach(h => {
+    const dt = new Date(h.ts);
+    const key = `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDate()}`;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(h);
+  });
+
+  let anyMerged = false;
+  const newHistory = [];
+
+  for (const key of Object.keys(groups)) {
+    const grp = groups[key].sort((a, b) => a.ts - b.ts);
+    if (grp.length === 1) { newHistory.push(grp[0]); continue; }
+
+    // Pick naming from the entry with the most distinct exercises
+    const countEx = h => new Set(Object.values(h.sets || {}).map(s => s?.name).filter(Boolean)).size;
+    const primary = grp.reduce((best, h) => countEx(h) >= countEx(best) ? h : best, grp[0]);
+
+    // Merge all sets together
+    let mergedSets = {};
+    for (const h of grp) mergedSets = mergeWorkoutSets(mergedSets, h.sets || {});
+
+    const merged = {
+      ...primary,
+      sets: mergedSets,
+      totalSets: grp.reduce((s, h) => s + (h.totalSets || 0), 0),
+      vol: grp.reduce((s, h) => s + (h.vol || 0), 0),
+      ts: grp[grp.length - 1].ts,
+    };
+
+    newHistory.push(merged);
+
+    if (!window.PREVIEW_MODE) {
+      // Update the keeper record
+      await updateWorkout(primary.id, merged);
+      // Delete the duplicates
+      for (const h of grp.filter(h => h.id !== primary.id)) {
+        await sb.from('workouts').delete().eq('id', h.id);
+      }
+    }
+
+    anyMerged = true;
+  }
+
+  if (anyMerged) {
+    appState.workoutHistory = newHistory.sort((a, b) => a.ts - b.ts);
+  }
 }
 
 async function saveFoodItem(item, dateKey) {
@@ -2700,8 +2758,13 @@ async function finishWorkout() {
   const existingEntry = appState.workoutHistory.find(isSameDay);
   if (existingEntry) {
     const mergedSets = mergeWorkoutSets(existingEntry.sets, entry.sets);
+    // Use naming from whichever session had more distinct exercises
+    const countEx = h => new Set(Object.values(h.sets || {}).map(s => s?.name).filter(Boolean)).size;
+    const richer = countEx(entry) >= countEx(existingEntry) ? entry : existingEntry;
     const mergedEntry = {
       ...existingEntry,
+      dayName: richer.dayName,
+      focus: richer.focus,
       sets: mergedSets,
       totalSets: existingEntry.totalSets + entry.totalSets,
       vol: existingEntry.vol + entry.vol,
