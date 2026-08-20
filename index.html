@@ -1331,92 +1331,38 @@ const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
    PROGRAM DATA
 ═══════════════════════════════════════════════════════ */
 const REST = { compound:90, accessory:60, circuit:30, cardio:0 };
+const FULL_BODY_EXERCISES = [
+  {name:"Hip Thrust",type:"Compound",sets:4,reps:"10 reps",rest:REST.compound,note:"Barbell on floor, pad over hips, upper back against flat bench. Drive through heels, squeeze at top 1 sec. Mon, Wed and Sat — same weight, all three sessions move up together. +2.5kg when all 4 sets clean.",key:true},
+  {name:"Squat",type:"Compound",sets:4,reps:"8 reps",rest:REST.compound,note:"Barbell back squat. Bar on upper back, feet shoulder-width, break at hips and knees together, full depth. Starting at 20kg (bar only) for the simplified program. +2.5kg when all 4 sets clean.",key:true},
+  {name:"Barbell Overhead Press",type:"Compound",sets:3,reps:"8 reps",rest:REST.compound,note:"Standing barbell press, bar starts at shoulders, press straight overhead, ribs down. Starting at 20kg (bar only). +2.5kg when all 3 sets clean."},
+  {name:"Deadlift",type:"Compound",sets:3,reps:"5 reps",rest:REST.compound,note:"Conventional barbell deadlift from the floor. Flat back throughout, bar close to shins. Starting at 20kg (bar only). +2.5kg when all 3 sets clean."},
+  {name:"Press Up",type:"Accessory",sets:3,reps:"12 reps",rest:REST.accessory,note:"Bodyweight push-up, full range, chest to floor. Progress reps toward 3×15 before adding load."},
+  {name:"Leg Raises",type:"Core",sets:3,reps:"15 reps",rest:REST.circuit,note:"Lying flat on back, legs straight, lower slow and controlled without arching the lower back off the floor."},
+];
+
+function fullBodyDay(name) {
+  return { name, focus:"Full Body", warmup:[
+    {name:"Bodyweight Squat",reps:"10 slow reps"},
+    {name:"Arm Circles",reps:"30 sec each direction"},
+    {name:"Hip Circles",reps:"10 reps each direction"},
+  ], exercises: FULL_BODY_EXERCISES };
+}
+
+const REST_DAY = { name:"Rest", focus:"Rest & Recovery", isRest:true, warmup:[], exercises:[] };
+
 const PROGRAM = {
   1: {
-    mon:{ name:"Monday", focus:"Glutes, Quads & Hamstrings",
-    warmup:[
-      {name:"Leg Swings",reps:"10 reps each leg"},
-      {name:"Hip Circles",reps:"10 reps each direction"},
-      {name:"Bodyweight Squat",reps:"10 slow reps"},
-    ],
-    exercises:[
-      {name:"Hip Thrust",type:"Compound",sets:4,reps:"10 reps",rest:REST.compound,note:"Barbell on floor, pad over hips, upper back against flat bench. Drive through heels, squeeze at top 1 sec. +2.5kg when all 4 sets clean.",key:true},
-      {name:"Squat",type:"Compound",sets:3,reps:"8 reps",rest:REST.compound,note:"Elevated heel goblet squat — heels on two 2.5–5kg plates, single DB at chest. Heel raise deepens quad stimulus and removes ankle mobility limits. +2kg when 3×8 clean."},
-      {name:"Barbell Romanian Deadlift",type:"Compound",sets:3,reps:"10 reps",rest:REST.compound,note:"Barbell on floor. Standard RDL — hip hinge, feel hamstrings load throughout. +2.5kg when all 3 sets clean."},
-      {name:"Cable Hip Abduction (Machine Hip Abduction)",type:"Accessory",sets:3,reps:"15 reps/leg",rest:REST.accessory,note:"Low pulley, ankle attachment. Stand sideways to stack with a slight forward lean. Controlled return — don't let the cable pull the leg back. 3×15 each leg. Progressive load — add weight each session when form is solid."},
-      {name:"Dead Bug",type:"Core",sets:3,reps:"45 sec",rest:REST.circuit,note:"Lower back flat on floor. Add 5 sec each session: 45→50→55→60 sec. Once at 60 sec consistently, progress to single leg + opposite arm extension."},
-    ]},
-    tue:{ name:"Tuesday", focus:"Back, Biceps & Core",
-    warmup:[
-      {name:"Arm Circles",reps:"30 sec each direction"},
-      {name:"Band Pull-Apart",reps:"2×15"},
-      {name:"Cat-Cow",reps:"10 slow reps"},
-    ],
-    exercises:[
-      {name:"Wide Grip Lat Pulldown",type:"Compound",sets:4,reps:"10 reps",rest:REST.compound,note:"High pulley with lat bar. Full stretch at top, squeeze lats at bottom. If no lat bar, use two single handles wide-grip. +2.5kg when all 4 sets clean.",key:true},
-      {name:"Machine Row",type:"Compound",sets:3,reps:"10 reps",rest:REST.compound,note:"Cable seated row — sit on floor or bench in front of low pulley, V-bar or rope handle. Pull to sternum, slight lean back at top. +2.5kg when all 3 sets clean."},
-      {name:"Standing Alt DB Bicep Curl",type:"Accessory",sets:3,reps:"12 reps",rest:REST.accessory,note:"Alternating arms, full supination at top. Slow eccentric — 2 sec down. +1kg when all 3 sets clean."},
-      {name:"Hip Raise Plank",type:"Core",sets:3,reps:"45 sec",rest:REST.circuit,note:"Forearm plank. Drive hips up into a pike, pause 1 sec, lower back. +5 sec each session until 90 sec target."},
-      {name:"Dead Bug",type:"Core",sets:3,reps:"45 sec",rest:REST.circuit,note:"Lower back flat. Add 5 sec each session: 45→50→55→60 sec."},
-      {name:"Incline Treadmill Walk",type:"Cardio",sets:1,reps:"20 min",rest:REST.cardio,note:"Zone 2 · 15% incline · 5.5–6.0 km/h. Target HR 120–135 bpm. Start 5.5 km/h — +0.1 km/h per session. At 6 km/h, raise incline +1% instead.",cardio:true,cardioDetails:{duration:"20 min",equipment:"Treadmill",incline:"15%",speed:"5.5–6.0 km/h",zone:2,zoneRange:"60–70% max HR",zoneNote:"Zone 2 — fat burning, aerobic base. Target HR 120–135 bpm. Should feel like work but conversational. Start 5.5 km/h and add 0.1 km/h per session."}},
-    ]},
-    wed:{ name:"Wednesday", focus:"Glutes & Hamstrings",
-    warmup:[
-      {name:"Leg Swings",reps:"10 reps each leg"},
-      {name:"Hip Circles",reps:"10 reps each direction"},
-      {name:"Bodyweight Squat",reps:"10 slow reps"},
-    ],
-    exercises:[
-      {name:"Hip Thrust",type:"Compound",sets:4,reps:"10 reps",rest:REST.compound,note:"Same setup as Monday — same weight, same progression. Both sessions move up together. +2.5kg when all 4 sets clean.",key:true},
-      {name:"Dumbbell Staggered Stance RDL",type:"Compound",sets:3,reps:"10 reps/leg",rest:REST.compound,note:"Dumbbells in hand, rear foot slightly back for balance — single-leg emphasis version of the Romanian Deadlift. 3×10 per leg. +2kg when both legs clean."},
-      {name:"DB Bulgarian Split Squat",type:"Compound",sets:3,reps:"10 reps/leg",rest:REST.compound,note:"Rear foot elevated on flat bench, DBs in hand. Drive through front heel. +2kg when both legs clean."},
-      {name:"Cable Glute Kickback",type:"Accessory",sets:3,reps:"12 reps/leg",rest:REST.accessory,note:"Low pulley, ankle attachment. 3×12 per leg. Full extension and squeeze every rep. +2.5kg when form is solid."},
-      {name:"Curtsy Lunge",type:"Accessory",sets:3,reps:"10 reps/leg",rest:REST.accessory,note:"Bodyweight or light DBs. Cross-behind pattern — step one leg behind and across, lower into lunge, drive back up. Treat as a strength movement and load progressively. BW first, then add 8–12kg DBs when pattern is clean. 3×10 per leg."},
-      {name:"Hollow Body Hold",type:"Core",sets:3,reps:"30 sec",rest:REST.circuit,note:"Lower back flat on floor, arms and legs extended. +5 sec each session until 45 sec target."},
-    ]},
-    sat:{ name:"Saturday", focus:"Glutes & Core",
-    warmup:[
-      {name:"Leg Swings",reps:"10 reps each leg"},
-      {name:"Hip Circles",reps:"10 reps each direction"},
-      {name:"Bodyweight Squat",reps:"10 slow reps"},
-    ],
-    exercises:[
-      {name:"Lateral Band Walks",type:"Accessory",sets:3,reps:"15 steps each direction",rest:REST.accessory,note:"Band just above knees. Stay low throughout — slight squat position, don't stand up between steps. 3×15 steps each direction. Primer before Hip Thrust."},
-      {name:"Single Leg Dumbbell Hip Thrust",type:"Compound",sets:3,reps:"10 reps/leg",rest:REST.compound,note:"Upper back against flat bench, one dumbbell resting on the working hip. Drive through the heel of the planted foot, squeeze at the top for 1 sec. Non-working leg bent and raised. 3×10 per leg — complete all reps on one side before switching. +2kg when both legs are clean.",key:true},
-      {name:"Hyperextension",type:"Accessory",sets:4,reps:"10 reps",rest:REST.accessory,note:"Barbell good morning substitute — bar across upper back, hinge at hips until torso near parallel, squeeze glutes to return. Keep form solid. +2.5kg when form is solid."},
-      {name:"DB Sumo Squat",type:"Accessory",sets:3,reps:"10 reps",rest:REST.accessory,note:"Single heavy dumbbell held vertically between legs, wide stance, toes out. Deep as possible. +2kg when all 3 sets clean."},
-      {name:"Cable Hip Extension (Machine Hip Extension)",type:"Accessory",sets:3,reps:"12 reps/side",rest:REST.accessory,note:"Low pulley, ankle attachment. Single leg — slight forward lean at the hip, controlled return. Don't let the cable snap the leg back. 3×12 per leg. Moderate load, prioritise feel over weight."},
-      {name:"Side-Lying Hip Abduction (Plate)",type:"Accessory",sets:3,reps:"15 reps/leg",rest:REST.accessory,note:"Lie on your side, place a weight plate on the outer thigh. Lift controlled — don't use momentum. Take each set close to failure. 5–10kg plate target. 3×15 per leg."},
-      {name:"Stomach Vacuum",type:"Core",sets:3,reps:"45 sec",rest:REST.circuit,note:"Draw navel to spine — hold and breathe normally through nose. +5 sec each session until 60 sec target."},
-    ]},
-    sun:{ name:"Sunday", focus:"Chest, Shoulders & Triceps",
-    warmup:[
-      {name:"Shoulder Circles",reps:"30 sec each direction"},
-      {name:"Doorframe Chest Stretch",reps:"2×20 sec each side"},
-      {name:"Light DB Press",reps:"1×15 (very light)"},
-    ],
-    exercises:[
-      {name:"Dumbbell Bench Press",type:"Compound",sets:4,reps:"8 reps",rest:REST.compound,note:"Flat bench, standard DB press. Full range — controlled eccentric 2 sec down. +2kg when all 4 sets clean.",key:true},
-      {name:"Seated Arnold Press",type:"Compound",sets:3,reps:"10 reps",rest:REST.compound,note:"Sit upright on flat bench or near-vertical incline. Rotate palms as you press up. +2kg when all 3 sets clean."},
-      {name:"Cable V-Bar Tricep Extension",type:"Accessory",sets:3,reps:"10 reps",rest:REST.accessory,note:"High pulley, V-bar attachment, elbows tucked to sides. Full extension. +2.5kg when all 3 sets clean."},
-      {name:"Cable Face Pull",type:"Accessory",sets:3,reps:"12 reps",rest:REST.accessory,note:"High pulley, rope attachment. Pull to face, elbows flared high. Never ego load. +2.5kg when all 3 sets clean."},
-      {name:"Pallof Press",type:"Core",sets:3,reps:"10 reps/side",rest:REST.circuit,note:"Cable at chest height, stand side-on to stack. Press straight out and return. 3×10 each side. +2.5kg when both sides clean."},
-      {name:"Incline Treadmill Walk",type:"Cardio",sets:1,reps:"20 min",rest:REST.cardio,note:"Zone 2 · 15% incline · 5.5–6.0 km/h. Same progression as Tuesday.",cardio:true,cardioDetails:{duration:"20 min",equipment:"Treadmill",incline:"15%",speed:"5.5–6.0 km/h",zone:2,zoneRange:"60–70% max HR",zoneNote:"Zone 2 cardio. Target HR 120–135 bpm. Start 5.5 km/h and add 0.1 km/h per session. At 6 km/h, increase incline +1% instead. Finish the week strong."}},
-    ]},
-    thu:{ name:"Thursday", focus:"Cardio", cardioOnly:true,
-    warmup:[],
-    exercises:[
-      {name:"Incline Treadmill Walk",type:"Cardio",sets:1,reps:"35 min",rest:REST.cardio,note:"Zone 2 · 15% incline · 5.5–6.0 km/h. Target HR 120–135 bpm. Conversational pace.",cardio:true,cardioDetails:{duration:"35 min",equipment:"Treadmill",incline:"15%",speed:"5.5–6.0 km/h",zone:2,zoneRange:"60–70% max HR",zoneNote:"Zone 2 — fat burning, aerobic base. Target HR 120–135 bpm. You can hold a full conversation. Start 5.5 km/h — add 0.1 km/h per session. At 6 km/h, increase incline +1% instead."}},
-      {name:"Cross Trainer",type:"Cardio",sets:1,reps:"35 min",rest:REST.cardio,note:"Zone 2 steady: HR 120–135 at level 8–10. Or Zone 3 intervals: 2 min hard (140–155 bpm) / 2 min easy for 6–8 rounds.",cardio:true,cardioDetails:{duration:"35 min",equipment:"Cross Trainer",difficulty:"Level 8–10",zone:2,zoneRange:"60–70% max HR",zoneNote:"Zone 2 steady at level 8–10, HR 120–135 bpm. Or Zone 3 intervals: 2 min hard / 2 min easy for 6–8 rounds. Vary week to week. Increase level by 1 when Zone 2 HR drops below 115 bpm."}},
-      {name:"Flat Treadmill",type:"Cardio",sets:1,reps:"35 min",rest:REST.cardio,note:"Zone 2 · Flat · 6.5–8.0 km/h brisk walk or light jog. Target HR 120–135 bpm.",cardio:true,cardioDetails:{duration:"35 min",equipment:"Treadmill",incline:"Flat (0%)",speed:"6.5–8.0 km/h",zone:2,zoneRange:"60–70% max HR",zoneNote:"Flat treadmill — fast walk or light jog. HR 120–135 bpm. Increase speed by 0.5 km/h per session when HR stays comfortably below 130 bpm."}},
-      {name:"Swimming",type:"Cardio",sets:1,reps:"30 min",rest:REST.cardio,note:"Zone 2–3 · Any stroke · Aim for continuous laps. Rest 15 sec between lengths if needed.",cardio:true,cardioDetails:{duration:"30 min",equipment:"Pool",incline:null,speed:null,zone:2,zoneRange:"60–75% max HR",zoneNote:"Any stroke — front crawl recommended. Aim for continuous laps in Zone 2–3. 30 min of swimming equals ~45 min on the treadmill for cardio output. Build to unbroken 30 min."}},
-      {name:"Cycling",type:"Cardio",sets:1,reps:"35 min",rest:REST.cardio,note:"Zone 2 · Stationary bike · Level 8–12 moderate resistance. Target HR 120–135 bpm.",cardio:true,cardioDetails:{duration:"35 min",equipment:"Bike",incline:null,speed:null,difficulty:"Level 8–12",zone:2,zoneRange:"60–70% max HR",zoneNote:"Stationary bike. Resistance level 8–12 — adjust to keep HR in Zone 2 (120–135 bpm). Increase level by 1 when HR stays below 115 bpm. Extend from 35 to 40 min as fitness builds."}},
-    ]},
-    fri:{ name:"Friday", focus:"Rest & Recovery", isRest:true, warmup:[], exercises:[] },
+    mon: fullBodyDay("Monday"),
+    tue: { ...REST_DAY, name:"Tuesday" },
+    wed: fullBodyDay("Wednesday"),
+    thu: { ...REST_DAY, name:"Thursday" },
+    fri: { ...REST_DAY, name:"Friday" },
+    sat: fullBodyDay("Saturday"),
+    sun: { ...REST_DAY, name:"Sunday" },
   }
 };
 
-const DAY_KEYS = ['mon','tue','wed','thu','sat','sun'];
+const DAY_KEYS = ['mon','wed','sat'];
 const PROG_VIEW_KEYS = ['mon','tue','wed','thu','fri','sat','sun'];
 const MEALS = [
   {name:"Breakfast",color:"#f9b8c4",kcal:398,foods:["150ml skim milk","30g whey protein","20g rolled oats","10g chia seeds","45g Greek yoghurt 0%","25g blueberries","5g walnuts","5g creatine · 5g collagen · psyllium husk"],macros:"P: 43.5g · C: 34g · F: 10.6g"},
@@ -2228,16 +2174,19 @@ function timedMode(ex) {
 // At runtime getTarget() reads from appState.targets which is loaded from Supabase.
 const DEFAULT_TARGETS = [
   // Current programme — key lifts
-  { exercise: "Hip Thrust",              target_weight: "90–95kg",        note: "Add +2.5kg when all sets are clean. Mon and Wed same weight — both move up together." },
+  { exercise: "Hip Thrust",              target_weight: "90–95kg",        note: "Add +2.5kg when all sets are clean. Mon, Wed and Sat — same weight, all three move up together." },
+  { exercise: "Squat",                   target_weight: "20kg (bar)",     note: "Barbell back squat — starting point for the simplified program. +2.5kg per session when 4×8 clean. Longer-term goal ~70–80kg." },
+  { exercise: "Barbell Overhead Press",  target_weight: "20kg (bar)",     note: "Starting point for the simplified program. +2.5kg per session when all 3 sets clean." },
+  { exercise: "Deadlift",                target_weight: "20kg (bar)",     note: "Conventional deadlift — starting point for the simplified program. +2.5kg per session when all 3 sets clean." },
+  { exercise: "Press Up",                target_weight: "bodyweight",     note: "Progress reps toward 3×15 before adding load." },
+  { exercise: "Leg Raises",              target_weight: "bodyweight",     note: "Lying leg raise. Slow, controlled, no lower-back arch." },
   { exercise: "Single Leg Dumbbell Hip Thrust", target_weight: "20–30kg", note: "Saturday unilateral key lift. Expect significantly less than bilateral — 20kg DB is a solid start, build to 30kg. +2kg when both legs are clean for 3×10." },
   { exercise: "Wide Grip Lat Pulldown",  target_weight: "45–55kg",        note: "+2.5kg per session when all 4 sets are clean." },
   { exercise: "Wide Grip Pull Down",     target_weight: "45–55kg",        note: "+2.5kg per session when all 4 sets are clean." },
-  { exercise: "Squat",                   target_weight: "32kg",           note: "Elevated heel goblet squat with single DB. +2kg per session when 3×8 clean." },
   { exercise: "Machine Hip Extension",           target_weight: "moderate",       note: "Full extension, squeeze and hold 1 sec. Add weight when 15 reps feels easy." },
   { exercise: "Incline Treadmill Walk",          target_weight: "6.0–6.5 km/h",  note: "15% incline always. Speed is how you progress — aim to walk faster in zone 3 as fitness builds." },
   // Barbell compounds
   { exercise: "Barbell Hip Thrust",            target_weight: "70–90kg plates", note: "You're using a plate-loaded hip thrust machine — the lever arm means each kg loaded feels ~15–20% harder than barbell. 70–90kg on the machine = equivalent to 100–120kg barbell. Start where you are and add 5kg per week." },
-  { exercise: "Squat",                         target_weight: "70–80kg",        note: "Advanced female squat ~1.2× bodyweight. 70kg is strong and achievable." },
   { exercise: "Romanian Deadlift",             target_weight: "60–75kg",        note: "Should feel heavy with a deep hamstring stretch. 70kg is the goal." },
   { exercise: "Barbell Romanian Deadlift",     target_weight: "60–75kg",        note: "Monday barbell RDL — hip hinge with barbell on floor. Deep hamstring stretch every rep. 70kg is the goal. +2.5kg when all 3 sets clean." },
   { exercise: "Dumbbell Staggered Stance RDL", target_weight: "50–60kg",        note: "Wednesday dumbbell single-leg RDL — DBs in hand, rear foot slightly back. Expect less weight than barbell bilateral. +2kg when both legs clean." },
@@ -3684,12 +3633,9 @@ function renderVolumeChart() {
   if (volumeChartMode === 'focus') {
     const days = [
       { k: 'all', n: 'All days' },
-      { k: 'mon', n: 'Mon — Glutes' },
-      { k: 'wed', n: 'Wed — Glutes' },
-      { k: 'sat', n: 'Sat — Glutes' },
-      { k: 'tue', n: 'Tue — Back' },
-      { k: 'sun', n: 'Sun — Push' },
-      { k: 'thu', n: 'Thu — Cardio' },
+      { k: 'mon', n: 'Mon — Full Body' },
+      { k: 'wed', n: 'Wed — Full Body' },
+      { k: 'sat', n: 'Sat — Full Body' },
     ];
     if (focusRow) {
       focusRow.style.display = 'flex';
