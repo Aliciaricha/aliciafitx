@@ -349,7 +349,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 }
 .day-pill.today-pill { background:var(--rose-mid); color:var(--rose-dk); }
 .day-pill.done-pill  { background:var(--sage-mid); color:var(--sage-dk); }
-.day-pill.rest-pill  { background:var(--sky-mid);  color:var(--sky-dk);  }
+.day-pill.rest-pill  { background:var(--mauve);    color:var(--mauve-dk); }
 .day-card-hd .dname  { font-size:15px; font-weight:600; letter-spacing:-0.1px; color:var(--charcoal); }
 .day-card-hd .dfocus { font-size:12px; color:var(--ink3); margin-top:2px; }
 .day-card-hd .dchev  { margin-left:auto; color:var(--ink3); transition:transform 0.22s; flex-shrink:0; }
@@ -748,15 +748,18 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
       <div style="text-align:center;font-size:10px;font-weight:600;color:var(--ink3);padding-bottom:4px;">S</div>
     </div>
     <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;"></div>
-    <div style="display:flex;gap:14px;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
+    <div style="display:flex;gap:14px;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);flex-wrap:wrap;">
       <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3);">
-        <div style="width:10px;height:10px;border-radius:50%;background:var(--rose);flex-shrink:0;"></div>Trained
+        <div style="width:10px;height:10px;border-radius:50%;background:var(--sage);flex-shrink:0;"></div>Done
       </div>
       <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3);">
-        <div style="width:10px;height:10px;border-radius:2px;background:var(--paper2);border:1px solid var(--border);flex-shrink:0;"></div>Rest
+        <div style="width:10px;height:10px;border-radius:50%;background:var(--rose);flex-shrink:0;"></div>Due
       </div>
       <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3);">
-        <div style="width:10px;height:10px;border-radius:50%;background:var(--rose-dk);flex-shrink:0;"></div>Today
+        <div style="width:10px;height:10px;border-radius:2px;background:var(--mauve);flex-shrink:0;"></div>Rest
+      </div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3);">
+        <div style="width:10px;height:10px;border-radius:50%;background:transparent;border:2px solid var(--ink);flex-shrink:0;"></div>Today
       </div>
     </div>
   </div>
@@ -2077,24 +2080,25 @@ function renderProgram() {
     const isToday = k === todayKey;
     const isRest = !!day.isRest;
     const done = !isRest && history.some(h => h.dayKey === k && h.phase === progPhase);
-    const pillClass = isRest ? 'rest-pill' : isToday ? 'today-pill' : done ? 'done-pill' : '';
+    const pillClass = isRest ? 'rest-pill' : done ? 'done-pill' : 'today-pill';
 
     if (isRest) {
       return `
-        <div class="day-card" id="dc-${k}" style="border-color:var(--sky);">
+        <div class="day-card" id="dc-${k}" style="border-color:var(--border2);">
           <div class="day-card-hd" style="cursor:default;">
             <div class="day-pill rest-pill">${day.name.slice(0, 3).toUpperCase()}</div>
             <div style="flex:1"><div class="dname">${day.name}</div><div class="dfocus">${day.focus}</div></div>
-            <span class="chip chip-sky" style="flex-shrink:0;">Rest</span>
+            <span class="chip chip-mauve" style="flex-shrink:0;">Rest</span>
           </div>
         </div>`;
     }
 
     const cardioOnly = !!day.cardioOnly;
-    const cardBorderColor = isToday ? 'var(--rose)' : done ? 'var(--sage)' : 'var(--border)';
+    const cardBorderColor = done ? 'var(--sage)' : 'var(--rose)';
+    const cardBorderWidth = isToday ? '2px' : '1px';
 
     return `
-      <div class="day-card" id="dc-${k}" style="border-color:${cardBorderColor};">
+      <div class="day-card" id="dc-${k}" style="border-color:${cardBorderColor};border-width:${cardBorderWidth};">
         <div class="day-card-hd" onclick="toggleDayCard('${k}')" style="cursor:pointer;">
           <div class="day-pill ${pillClass}">${day.name.slice(0, 3).toUpperCase()}</div>
           <div style="flex:1"><div class="dname">${day.name}</div><div class="dfocus">${day.focus}</div></div>
@@ -3468,24 +3472,29 @@ function renderCalendar() {
     const isToday = d === today.getDate() && calMonth === today.getMonth() && calYear === today.getFullYear();
     const sessions = workoutDays[key] || [];
     const trained = sessions.length > 0;
+    const dow = new Date(calYear, calMonth, d).getDay();
+    const dk = ['sun','mon','tue','wed','thu','fri','sat'][dow];
+    const isWorkoutDay = DAY_KEYS.includes(dk);
 
-    let bg = 'var(--paper)';
-    let border = '1px solid var(--border)';
-    let color = 'var(--ink3)';
-    let fontWeight = '400';
-
-    if (isToday && trained) {
-      bg = 'var(--rose-dk)'; border = 'none'; color = '#fff'; fontWeight = '700';
-    } else if (isToday) {
-      bg = 'var(--rose-bg)'; border = '1.5px solid var(--rose-dk)'; color = 'var(--rose-dk)'; fontWeight = '700';
-    } else if (trained) {
+    // Green = completed · Pink = due (scheduled, not yet done) · Grey = rest day
+    let bg, border, color, fontWeight;
+    if (trained) {
+      bg = 'var(--sage)'; border = '1px solid var(--sage-dk)'; color = 'var(--sage-dk)'; fontWeight = '600';
+    } else if (isWorkoutDay) {
       bg = 'var(--rose)'; border = '1px solid var(--rose-dk)'; color = 'var(--rose-dk)'; fontWeight = '600';
+    } else {
+      bg = 'var(--mauve)'; border = '1px solid var(--border)'; color = 'var(--mauve-dk)'; fontWeight = '400';
+    }
+    if (isToday) {
+      const ringColor = trained ? 'var(--sage-dk)' : isWorkoutDay ? 'var(--rose-dk)' : 'var(--mauve-dk)';
+      border = `2px solid ${ringColor}`;
+      fontWeight = '700';
     }
 
     const clickAttr = trained ? `onclick="onCalDayClick(${d})"` : '';
     html += `<div ${clickAttr} style="height:34px;border-radius:var(--r-xs);background:${bg};border:${border};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:${fontWeight};color:${color};cursor:${trained?'pointer':'default'};position:relative;transition:opacity 0.15s;-webkit-tap-highlight-color:rgba(0,0,0,0.1);">
       <span style="pointer-events:none;">${d}</span>
-      ${trained && sessions.length > 1 ? `<div style="position:absolute;top:3px;right:4px;width:5px;height:5px;border-radius:50%;background:var(--rose-dk);opacity:0.7;pointer-events:none;"></div>` : ''}
+      ${trained && sessions.length > 1 ? `<div style="position:absolute;top:3px;right:4px;width:5px;height:5px;border-radius:50%;background:var(--sage-dk);opacity:0.7;pointer-events:none;"></div>` : ''}
     </div>`;
   }
 
