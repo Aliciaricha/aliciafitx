@@ -1332,13 +1332,22 @@ const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 ═══════════════════════════════════════════════════════ */
 const REST = { compound:90, accessory:60, circuit:30, cardio:0 };
 const FULL_BODY_EXERCISES = [
-  {name:"Hip Thrust",type:"Compound",sets:4,reps:"10 reps",rest:REST.compound,note:"Barbell on floor, pad over hips, upper back against flat bench. Drive through heels, squeeze at top 1 sec. Mon, Wed and Sat — same weight, all three sessions move up together. +2.5kg when all 4 sets clean.",key:true},
-  {name:"Squat",type:"Compound",sets:4,reps:"8 reps",rest:REST.compound,note:"Barbell back squat. Bar on upper back, feet shoulder-width, break at hips and knees together, full depth. Starting at 20kg (bar only) for the simplified program. +2.5kg when all 4 sets clean.",key:true},
-  {name:"Barbell Overhead Press",type:"Compound",sets:3,reps:"8 reps",rest:REST.compound,note:"Standing barbell press, bar starts at shoulders, press straight overhead, ribs down. Starting at 20kg (bar only). +2.5kg when all 3 sets clean."},
-  {name:"Deadlift",type:"Compound",sets:3,reps:"5 reps",rest:REST.compound,note:"Conventional barbell deadlift from the floor. Flat back throughout, bar close to shins. Starting at 20kg (bar only). +2.5kg when all 3 sets clean."},
-  {name:"Press Up",type:"Accessory",sets:3,reps:"12 reps",rest:REST.accessory,note:"Bodyweight push-up, full range, chest to floor. Progress reps toward 3×15 before adding load."},
-  {name:"Leg Raises",type:"Core",sets:3,reps:"15 reps",rest:REST.circuit,note:"Lying flat on back, legs straight, lower slow and controlled without arching the lower back off the floor."},
+  {name:"Hip Thrust",type:"Compound",sets:4,reps:"10 reps",rest:REST.compound,note:"Barbell on floor, pad over hips, upper back against flat bench. Drive through heels, squeeze at top 1 sec. Mon, Wed and Sat — same weight, all three sessions move up together. +2.5kg every session.",key:true},
+  {name:"Squat",type:"Compound",sets:4,reps:"8 reps",rest:REST.compound,note:"Barbell back squat. Bar on upper back, feet shoulder-width, break at hips and knees together, full depth. Starting at 20kg (bar only). +2.5kg every session.",key:true},
+  {name:"Barbell Overhead Press",type:"Compound",sets:3,reps:"5 reps",rest:REST.compound,note:"Standing barbell press, bar starts at shoulders, press straight overhead, ribs down. Starting at 20kg (bar only). Weight stays put until all 3 sets hit 5 clean reps, then +2.5kg."},
+  {name:"Deadlift",type:"Compound",sets:3,reps:"5 reps",rest:REST.compound,note:"Conventional barbell deadlift from the floor. Flat back throughout, bar close to shins. Starting at 20kg (bar only). +2.5kg every session."},
+  {name:"Press Up",type:"Accessory",sets:3,reps:"10 reps",rest:REST.accessory,note:"Bodyweight push-up, full range, chest to floor. One more rep every session."},
+  {name:"Leg Raises",type:"Core",sets:3,reps:"12 reps",rest:REST.circuit,note:"Lying flat on back, legs straight, lower slow and controlled without arching the lower back off the floor. One more rep every session."},
 ];
+
+const PROGRESSION_RULES = {
+  "Hip Thrust":              { mode: "weight", inc: 2.5 },
+  "Squat":                   { mode: "weight", inc: 2.5 },
+  "Deadlift":                { mode: "weight", inc: 2.5 },
+  "Barbell Overhead Press":  { mode: "weight-after-reps", inc: 2.5, repTarget: 5 },
+  "Press Up":                { mode: "reps", inc: 1 },
+  "Leg Raises":              { mode: "reps", inc: 1 },
+};
 
 function fullBodyDay(name) {
   return { name, focus:"Full Body", warmup:[
@@ -2124,6 +2133,10 @@ function renderProgram() {
                   const maxW = Math.max(...lastSets.map(s => parseFloat(s.w) || 0));
                   const matchSet = lastSets.find(s => parseFloat(s.w) === maxW);
                   if (maxW) lastLabel = `Last: ${maxW}kg × ${matchSet?.r || '?'}r`;
+                  else {
+                    const maxR = Math.max(...lastSets.map(s => parseInt(s.r) || 0));
+                    if (maxR) lastLabel = `Last: ${maxR} reps`;
+                  }
                 }
               } else if (!isTimed && appState.pbs?.[ex.name]?.w) {
                 const pb = appState.pbs[ex.name];
@@ -2174,12 +2187,12 @@ function timedMode(ex) {
 // At runtime getTarget() reads from appState.targets which is loaded from Supabase.
 const DEFAULT_TARGETS = [
   // Current programme — key lifts
-  { exercise: "Hip Thrust",              target_weight: "90–95kg",        note: "Add +2.5kg when all sets are clean. Mon, Wed and Sat — same weight, all three move up together." },
-  { exercise: "Squat",                   target_weight: "20kg (bar)",     note: "Barbell back squat — starting point for the simplified program. +2.5kg per session when 4×8 clean. Longer-term goal ~70–80kg." },
-  { exercise: "Barbell Overhead Press",  target_weight: "20kg (bar)",     note: "Starting point for the simplified program. +2.5kg per session when all 3 sets clean." },
-  { exercise: "Deadlift",                target_weight: "20kg (bar)",     note: "Conventional deadlift — starting point for the simplified program. +2.5kg per session when all 3 sets clean." },
-  { exercise: "Press Up",                target_weight: "bodyweight",     note: "Progress reps toward 3×15 before adding load." },
-  { exercise: "Leg Raises",              target_weight: "bodyweight",     note: "Lying leg raise. Slow, controlled, no lower-back arch." },
+  { exercise: "Hip Thrust",              target_weight: "90–95kg",        note: "+2.5kg every session. Mon, Wed and Sat — same weight, all three move up together." },
+  { exercise: "Squat",                   target_weight: "20kg (bar)",     note: "Barbell back squat — starting point for the simplified program. +2.5kg every session. Longer-term goal ~70–80kg." },
+  { exercise: "Barbell Overhead Press",  target_weight: "20kg (bar)",     note: "Starting point for the simplified program. Weight stays put until all 3 sets hit 5 clean reps, then +2.5kg." },
+  { exercise: "Deadlift",                target_weight: "20kg (bar)",     note: "Conventional deadlift — starting point for the simplified program. +2.5kg every session." },
+  { exercise: "Press Up",                target_weight: "bodyweight",     note: "One more rep every session." },
+  { exercise: "Leg Raises",              target_weight: "bodyweight",     note: "Lying leg raise. Slow, controlled, no lower-back arch. One more rep every session." },
   { exercise: "Single Leg Dumbbell Hip Thrust", target_weight: "20–30kg", note: "Saturday unilateral key lift. Expect significantly less than bilateral — 20kg DB is a solid start, build to 30kg. +2kg when both legs are clean for 3×10." },
   { exercise: "Wide Grip Lat Pulldown",  target_weight: "45–55kg",        note: "+2.5kg per session when all 4 sets are clean." },
   { exercise: "Wide Grip Pull Down",     target_weight: "45–55kg",        note: "+2.5kg per session when all 4 sets are clean." },
@@ -2403,7 +2416,7 @@ function renderLog() {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
               </div>
             </div>`).join('')}
-          ${prev ? `<div class="prev-best">${isTimedEx ? `Last session: ${prev.r} ${timed === 'minutes' ? 'min' : 'sec'}` : `Last session: ${prev.w}kg × ${prev.r} reps`}</div>` : ''}
+          ${prev ? `<div class="prev-best">${isTimedEx ? `Last session: ${prev.r} ${timed === 'minutes' ? 'min' : 'sec'}` : (prev.w ? `Last session: ${prev.w}kg × ${prev.r} reps` : `Last session: ${prev.r} reps`)}</div>` : ''}
           <button class="add-set-btn" onclick="addSet(${i})">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Add set
@@ -2464,23 +2477,45 @@ function renderLog() {
 
     // Today's Target box — dynamic progression from last session
     let targetBox = '';
-    if (!isTimedEx && !ex.cardio && prev && prev.w) {
-      const prevW = parseFloat(prev.w);
-      const prevR = parseInt(prev.r) || 0;
-      const nm = ex.name;
-      let inc;
-      if (/\bdb\b|dumbbell/i.test(nm)) inc = 2;
-      else if (/machine|cable|lat pull|pulldown/i.test(nm)) inc = 2.5;
-      else inc = 1.25;
-      const tgtW = Math.round((prevW + inc) * 100) / 100;
-      const tgtR = parseInt(ex.reps) || prevR;
-      targetBox = `<div style="margin:0 0 12px;padding:11px 14px;background:#fffcef;border:1.5px solid #e0c040;border-radius:var(--r-sm);">
+    const targetBoxWrap = (headline, sub) => `<div style="margin:0 0 12px;padding:11px 14px;background:#fffcef;border:1.5px solid #e0c040;border-radius:var(--r-sm);">
         <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#7a6018;margin-bottom:5px;">Today's Target</div>
-        <div style="font-size:16px;font-weight:700;color:var(--ink);letter-spacing:-0.3px;">${tgtW}kg &times; ${tgtR}</div>
-        <div style="margin-top:6px;font-size:11.5px;color:var(--ink2);line-height:1.5;">
-          Alternatives &nbsp;·&nbsp; <span style="font-weight:500;">${prevW}kg &times; ${prevR + 2} reps</span> &nbsp;·&nbsp; <span style="font-weight:500;">${ex.sets + 1} sets at ${prevW}kg</span>
-        </div>
+        <div style="font-size:16px;font-weight:700;color:var(--ink);letter-spacing:-0.3px;">${headline}</div>
+        <div style="margin-top:6px;font-size:11.5px;color:var(--ink2);line-height:1.5;">${sub}</div>
       </div>`;
+    if (!isTimedEx && !ex.cardio && prev) {
+      const rule = PROGRESSION_RULES[ex.name];
+      const prevW = prev.w ? parseFloat(prev.w) : null;
+      const bestRepsSet = lastSessionSets
+        ? lastSessionSets.reduce((b, s) => (!b || (parseInt(s.r) || 0) > (parseInt(b.r) || 0)) ? s : b, null)
+        : prev;
+      const prevR = parseInt(bestRepsSet?.r) || parseInt(prev.r) || 0;
+
+      if (rule && rule.mode === 'reps') {
+        const tgtR = prevR + rule.inc;
+        targetBox = targetBoxWrap(`${tgtR} reps`, `Last time: ${prevR} reps &nbsp;·&nbsp; +${rule.inc} every session.`);
+      } else if (rule && rule.mode === 'weight-after-reps' && prevW) {
+        const metTarget = prevR >= rule.repTarget;
+        const tgtW = metTarget ? Math.round((prevW + rule.inc) * 100) / 100 : prevW;
+        const tgtR = metTarget ? rule.repTarget : Math.min(prevR + 1, rule.repTarget);
+        targetBox = targetBoxWrap(`${tgtW}kg &times; ${tgtR}`,
+          metTarget
+            ? `Hit ${rule.repTarget} clean last time — weight goes up.`
+            : `Last time: ${prevW}kg &times; ${prevR}. Build to ${rule.repTarget} reps across all sets before the weight increases.`);
+      } else if (rule && rule.mode === 'weight' && prevW) {
+        const tgtW = Math.round((prevW + rule.inc) * 100) / 100;
+        const tgtR = parseInt(ex.reps) || prevR;
+        targetBox = targetBoxWrap(`${tgtW}kg &times; ${tgtR}`, `Up ${rule.inc}kg from last time (${prevW}kg).`);
+      } else if (!rule && prevW) {
+        const nm = ex.name;
+        let inc;
+        if (/\bdb\b|dumbbell/i.test(nm)) inc = 2;
+        else if (/machine|cable|lat pull|pulldown/i.test(nm)) inc = 2.5;
+        else inc = 1.25;
+        const tgtW = Math.round((prevW + inc) * 100) / 100;
+        const tgtR = parseInt(ex.reps) || prevR;
+        targetBox = targetBoxWrap(`${tgtW}kg &times; ${tgtR}`,
+          `Alternatives &nbsp;·&nbsp; <span style="font-weight:500;">${prevW}kg &times; ${prevR + 2} reps</span> &nbsp;·&nbsp; <span style="font-weight:500;">${ex.sets + 1} sets at ${prevW}kg</span>`);
+      }
     }
 
     return `
@@ -2527,7 +2562,7 @@ function renderLog() {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
               </div>
             </div>`).join('')}
-          ${prev ? `<div class="prev-best">${isTimedEx ? `Last session: ${prev.r} ${timed === 'minutes' ? 'min' : 'sec'}` : `Last session: ${prev.w}kg × ${prev.r} reps`}</div>` : ''}
+          ${prev ? `<div class="prev-best">${isTimedEx ? `Last session: ${prev.r} ${timed === 'minutes' ? 'min' : 'sec'}` : (prev.w ? `Last session: ${prev.w}kg × ${prev.r} reps` : `Last session: ${prev.r} reps`)}</div>` : ''}
           <button class="add-set-btn" onclick="addSet(${i})">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Add set
