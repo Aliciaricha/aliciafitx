@@ -1337,7 +1337,7 @@ const REST = { compound:90, accessory:60, circuit:30, cardio:0 };
 const FULL_BODY_EXERCISES = [
   {name:"Hip Thrust",type:"Compound",sets:4,reps:"10 reps",rest:REST.compound,note:"Barbell on floor, pad over hips, upper back against flat bench. Drive through heels, squeeze at top 1 sec. Mon, Wed and Sat — same weight, all three sessions move up together. +2.5kg every session.",key:true},
   {name:"Squat",type:"Compound",sets:4,reps:"8 reps",rest:REST.compound,note:"Barbell back squat. Bar on upper back, feet shoulder-width, break at hips and knees together, full depth. Starting at 20kg (bar only). +2.5kg every session.",key:true},
-  {name:"Barbell Overhead Press",type:"Compound",sets:3,reps:"5 reps",rest:REST.compound,note:"Standing barbell press, bar starts at shoulders, press straight overhead, ribs down. Starting at 20kg (bar only). Weight stays put until all 3 sets hit 5 clean reps, then +2.5kg."},
+  {name:"Barbell Overhead Press",type:"Compound",sets:3,reps:"12 reps",rest:REST.compound,note:"Standing barbell press, bar starts at shoulders, press straight overhead, ribs down. Starting at 20kg (bar only). Weight stays put until all 3 sets hit 12 clean reps, then +2.5kg."},
   {name:"Deadlift",type:"Compound",sets:3,reps:"5 reps",rest:REST.compound,note:"Conventional barbell deadlift from the floor. Flat back throughout, bar close to shins. Starting at 20kg (bar only). +2.5kg every session."},
   {name:"Press Up",type:"Accessory",sets:3,reps:"10 reps",rest:REST.accessory,note:"Bodyweight push-up, full range, chest to floor. One more rep every session."},
   {name:"Leg Raises",type:"Core",sets:3,reps:"12 reps",rest:REST.circuit,note:"Lying flat on back, legs straight, lower slow and controlled without arching the lower back off the floor. One more rep every session."},
@@ -1347,7 +1347,7 @@ const PROGRESSION_RULES = {
   "Hip Thrust":              { mode: "weight", inc: 2.5 },
   "Squat":                   { mode: "weight", inc: 2.5 },
   "Deadlift":                { mode: "weight", inc: 2.5 },
-  "Barbell Overhead Press":  { mode: "weight-after-reps", inc: 2.5, repTarget: 5 },
+  "Barbell Overhead Press":  { mode: "weight-after-reps", inc: 2.5, repTarget: 12 },
   "Press Up":                { mode: "reps", inc: 1 },
   "Leg Raises":              { mode: "reps", inc: 1 },
 };
@@ -2193,7 +2193,7 @@ const DEFAULT_TARGETS = [
   // Current programme — key lifts
   { exercise: "Hip Thrust",              target_weight: "90–95kg",        note: "+2.5kg every session. Mon, Wed and Sat — same weight, all three move up together." },
   { exercise: "Squat",                   target_weight: "20kg (bar)",     note: "Barbell back squat — starting point for the simplified program. +2.5kg every session. Longer-term goal ~70–80kg." },
-  { exercise: "Barbell Overhead Press",  target_weight: "20kg (bar)",     note: "Starting point for the simplified program. Weight stays put until all 3 sets hit 5 clean reps, then +2.5kg." },
+  { exercise: "Barbell Overhead Press",  target_weight: "20kg (bar)",     note: "Starting point for the simplified program. Weight stays put until all 3 sets hit 12 clean reps, then +2.5kg." },
   { exercise: "Deadlift",                target_weight: "20kg (bar)",     note: "Conventional deadlift — starting point for the simplified program. +2.5kg every session." },
   { exercise: "Press Up",                target_weight: "bodyweight",     note: "One more rep every session." },
   { exercise: "Leg Raises",              target_weight: "bodyweight",     note: "Lying leg raise. Slow, controlled, no lower-back arch. One more rep every session." },
