@@ -717,6 +717,9 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
       <div class="home-greeting serif" id="home-greeting">Good morning</div>
       <div class="home-date" id="home-date"></div>
     </div>
+    <button class="btn-icon" onclick="forceRefresh()" title="Refresh to latest version" style="flex-shrink:0;margin-top:2px;">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+    </button>
   </div>
   <div id="smart-session-wrap"></div>
 
@@ -1433,6 +1436,16 @@ function showSync(type, msg) {
   if (type === 'saved') {
     syncTimeout = setTimeout(() => bar.classList.remove('show'), 2000);
   }
+}
+function forceRefresh() {
+  showSync('syncing', 'Refreshing to latest version…');
+  try {
+    if (window.caches) caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))));
+    if (navigator.serviceWorker) navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
+  } catch (e) {}
+  const url = new URL(location.href);
+  url.searchParams.set('v', Date.now());
+  setTimeout(() => { location.href = url.toString(); }, 200);
 }
 function hideSync() {
   document.getElementById('sync-bar').classList.remove('show');
