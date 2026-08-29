@@ -1315,6 +1315,8 @@ const UPPER_A_EXERCISES = [
     note:"Seated, DB in each hand, press straight overhead without arching the back. When all 3 sets hit 10 clean reps, add weight. Start 8kg/DB, aim ~14kg/DB."},
   {name:"Dead Bug",              type:"Core",      equipment:"Bodyweight",        sets:3, reps:"10/side", rest:REST.circuit,   metric:"reps",
     note:"Lower back pressed flat to the floor throughout, slow controlled tempo. One more rep per side every session — aim for 12/side at a 3-second tempo per rep."},
+  {name:"Face Pull",             type:"Accessory", equipment:"Cable + rope, set high", sets:2, reps:"15", rest:REST.accessory, metric:"kg_stack",
+    note:"Pull rope to face, elbows high, end with a slight outward rotation (thumbs pointing behind you). Light weight, strict form — this is a rear delt/mid-trap exercise, never a strength lift. When both sets hit 15 clean reps, add weight. Start 10kg, aim ~20kg."},
 ];
 
 const LOWER_B_EXERCISES = [
@@ -1337,6 +1339,8 @@ const UPPER_B_EXERCISES = [
     note:"Strict form, raise to shoulder height only, no swing. When all 3 sets hit 15 clean reps, add weight. Start 4kg/DB, aim ~9kg/DB."},
   {name:"Hollow Body Hold",      type:"Core",      equipment:"Bodyweight",         sets:3, reps:"20 sec",  rest:REST.circuit,   metric:"seconds",
     note:"Lower back pressed to the floor. Breathe normally throughout — do not hold your breath. Log your best hold of the 3. Aim for 50 seconds by 6 months."},
+  {name:"Face Pull",             type:"Accessory", equipment:"Cable + rope, set high", sets:2, reps:"15", rest:REST.accessory, metric:"kg_stack",
+    note:"Pull rope to face, elbows high, end with a slight outward rotation (thumbs pointing behind you). Light weight, strict form — this is a rear delt/mid-trap exercise, never a strength lift. When both sets hit 15 clean reps, add weight. Start 10kg, aim ~20kg."},
   {name:"Intervals — 4×4",       type:"Interval",  equipment:"Bike / Stairmaster / Incline Treadmill", sets:1, reps:"4 rounds", rest:0, metric:"interval_log", interval:true,
     note:"4 rounds of 4 min hard + 3 min easy. \"Hard\" = can speak words, not full sentences. Beat last session's output at the same machine and round count. Aim for +15–20% output by 6 months."},
 ];
@@ -1358,6 +1362,7 @@ const PROGRESSION_RULES = {
   "Calf Raise":            { mode: "weight-after-reps", inc: 2,   repTarget: 15 },
   "Seated Row":            { mode: "weight-after-reps", inc: 2.5, repTarget: 10 },
   "Lateral Raise":         { mode: "weight-after-reps", inc: 1,   repTarget: 15 },
+  "Face Pull":             { mode: "weight-after-reps", inc: 2.5, repTarget: 15 },
   // Bodyweight rep progression.
   "Dead Bug":              { mode: "reps", inc: 1 },
 };
@@ -1499,6 +1504,7 @@ function loadMockData() {
       '1':{name:'Lat Pulldown',           w: n<2?35:37.5,      r: n<2?10:9},
       '2':{name:'Seated Shoulder Press',  w: n<2?8:10,         r: n===0?9:(n===1?10:9)},
       '3':{name:'Dead Bug',               w:null,              r:10 + n},
+      '4':{name:'Face Pull',              w: n<2?10:12.5,      r:15},
     })},
     thu: { focus:'Lower B', vol:1680, build: n => ({
       '0':{name:'Romanian Deadlift',      w:40 + 2.5*n,        r:8},
@@ -1511,7 +1517,8 @@ function loadMockData() {
       '1':{name:'Seated Row',             w:35,                r:10},
       '2':{name:'Lateral Raise',          w:4,                 r:14 + n},
       '3':{name:'Hollow Body Hold',       w:null,              r:20 + 2*n},
-      '4':{name:'Intervals — 4×4',        machine: n%2===0?'bike':'stairs', output: n%2===0?'180W avg':'level 7', rounds: n===0?3:4},
+      '4':{name:'Face Pull',              w: n<2?10:12.5,      r:15},
+      '5':{name:'Intervals — 4×4',        machine: n%2===0?'bike':'stairs', output: n%2===0?'180W avg':'level 7', rounds: n===0?3:4},
     })},
   };
 
@@ -2281,6 +2288,7 @@ const DEFAULT_TARGETS = [
   { exercise: "Lat Pulldown",           target_weight: "52.5kg",      note: "Start 35kg. Add weight once all 3 sets hit 10 clean reps. 6-month target ~52.5kg." },
   { exercise: "Seated Shoulder Press",  target_weight: "14kg/DB",     note: "Start 8kg/DB. Add weight once all 3 sets hit 10 clean reps. 6-month target ~14kg/DB." },
   { exercise: "Dead Bug",               target_weight: "12/side, 3s tempo", note: "Start 10/side. One more rep per side every session — 6-month target 12/side at a 3-second tempo." },
+  { exercise: "Face Pull",              target_weight: "20kg", note: "Posture patch on both Upper A and Upper B. Start 10kg. Light weight, strict form — never a strength lift. Add weight once both sets hit 15 clean reps. 6-month target ~20kg." },
   // Day 3 — Lower B
   { exercise: "Romanian Deadlift", target_weight: "75kg",  note: "Start 40kg. First lift of the day — add weight every session. 6-month target ~75kg." },
   { exercise: "Goblet Squat",      target_weight: "30kg",  note: "Start 16kg. Add weight once all 3 sets hit 10 clean reps. 6-month target ~30kg." },
