@@ -760,10 +760,13 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
         <div style="width:10px;height:10px;border-radius:50%;background:var(--sage);flex-shrink:0;"></div>Done
       </div>
       <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3);">
-        <div style="width:10px;height:10px;border-radius:50%;background:var(--rose);flex-shrink:0;"></div>Due
+        <div style="width:10px;height:10px;border-radius:50%;background:var(--rose);flex-shrink:0;"></div>Due today
       </div>
       <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3);">
-        <div style="width:10px;height:10px;border-radius:2px;background:var(--mauve);flex-shrink:0;"></div>Rest
+        <div style="width:10px;height:10px;border-radius:50%;background:var(--sky);flex-shrink:0;"></div>Due later
+      </div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3);">
+        <div style="width:10px;height:10px;border-radius:2px;background:var(--mauve);flex-shrink:0;"></div>Rest / missed
       </div>
       <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3);">
         <div style="width:10px;height:10px;border-radius:50%;background:transparent;border:2px solid var(--ink);flex-shrink:0;"></div>Today
@@ -3806,12 +3809,15 @@ function renderCalendar() {
     const dk = ['sun','mon','tue','wed','thu','fri','sat'][dow];
     const isWorkoutDay = DAY_KEYS.includes(dk);
 
-    // Green = completed · Pink = due (scheduled, not yet done) · Grey = rest day
+    // Green = completed · Pink = due today · Pale blue = due later this week/month ·
+    // Grey = rest day or a workout day that passed without being logged.
     let bg, border, color, fontWeight;
     if (trained) {
       bg = 'var(--sage)'; border = '1px solid var(--sage-dk)'; color = 'var(--sage-dk)'; fontWeight = '600';
-    } else if (isWorkoutDay) {
+    } else if (isWorkoutDay && isToday) {
       bg = 'var(--rose)'; border = '1px solid var(--rose-dk)'; color = 'var(--rose-dk)'; fontWeight = '600';
+    } else if (isWorkoutDay && new Date(calYear, calMonth, d) > new Date(today.getFullYear(), today.getMonth(), today.getDate())) {
+      bg = 'var(--sky)'; border = '1px solid var(--sky-dk)'; color = 'var(--sky-dk)'; fontWeight = '600';
     } else {
       bg = 'var(--mauve)'; border = '1px solid var(--border)'; color = 'var(--mauve-dk)'; fontWeight = '400';
     }
