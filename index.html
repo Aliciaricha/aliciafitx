@@ -35,22 +35,22 @@
   --paper2:   #ecedf2;
 
   /* ── Pink — today / active ─────────────────────────────── */
-  --rose:     #fadadf;        /* visible pastel pink border */
+  --rose:     #fbe6ea;        /* soft pastel pink border */
   --rose-dk:  #c0304f;
   --rose-bg:  #fef0f3;        /* very pale section bg */
-  --rose-mid: #fadadf;
+  --rose-mid: #fbe6ea;
 
   /* ── Green — session done ──────────────────────────────── */
-  --sage:     #c8ebd8;        /* visible pastel green border */
+  --sage:     #ddf1e7;        /* soft pastel green border */
   --sage-dk:  #167a49;
   --sage-bg:  #eaf6f0;        /* very pale section bg */
-  --sage-mid: #c8ebd8;
+  --sage-mid: #ddf1e7;
 
   /* ── Blue — rest day ───────────────────────────────────── */
-  --sky:      #c2d8f5;        /* visible pastel blue border */
+  --sky:      #dbe7f9;        /* soft pastel blue border */
   --sky-dk:   #2450a0;
   --sky-bg:   #eaf1fb;        /* very pale section bg */
-  --sky-mid:  #c2d8f5;
+  --sky-mid:  #dbe7f9;
 
   /* ── Neutral tags ──────────────────────────────────────── */
   --mauve:    #ebebeb;
@@ -898,103 +898,54 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
         </div>
       </div>
 
+      <!-- T: Pre-Workout -->
+      <div style="margin:0 16px 10px;background:var(--white);border:1.5px solid var(--rose);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-sm);">
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--rose);background:var(--rose-bg);">
+          <div style="width:34px;height:34px;border-radius:var(--r-sm);background:var(--white);display:flex;align-items:center;justify-content:center;color:var(--ink2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+          <div style="flex:1;"><div style="font-size:13px;font-weight:600;color:var(--rose-dk);">Pre-Workout</div><div id="train-preworkout-sub" style="font-size:11px;color:var(--rose-dk);opacity:0.8;">loading…</div></div>
+          <div id="train-preworkout-macros" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--rose-dk);"></div>
+        </div>
+        <div id="train-preworkout-foods" style="padding:10px 16px;display:flex;flex-direction:column;gap:5px;"></div>
+      </div>
+
       <!-- T: Breakfast -->
       <div style="margin:0 16px 10px;background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-sm);">
         <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--paper);">
           <div style="width:34px;height:34px;border-radius:var(--r-sm);background:var(--rose-bg);display:flex;align-items:center;justify-content:center;color:var(--ink2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 17v4M3 17h18M8 11.5a5 5 0 018 0M12 4v2M4.93 7.43l1.41 1.41M19.07 7.43l-1.41 1.41"/></svg></div>
-          <div style="flex:1;"><div style="font-size:13px;font-weight:600;">Breakfast</div><div style="font-size:11px;color:var(--ink3);">398 kcal · 43.5g protein</div></div>
-          <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--rose-dk);">P43.5 · C34 · F10.6</div>
+          <div style="flex:1;"><div style="font-size:13px;font-weight:600;">Breakfast</div><div id="train-breakfast-sub" style="font-size:11px;color:var(--ink3);">loading…</div></div>
+          <div id="train-breakfast-macros" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--rose-dk);"></div>
         </div>
-        <div style="padding:10px 16px;display:flex;flex-direction:column;gap:5px;">
-          <div style="font-size:12px;color:var(--ink2);display:flex;justify-content:space-between;"><span>Skim milk</span><span style="font-family:'DM Mono',monospace;color:var(--ink3);flex-shrink:0;margin-left:8px;">150ml</span></div>
-          <div style="font-size:12px;color:var(--ink2);display:flex;justify-content:space-between;"><span>Whey protein</span><span style="font-family:'DM Mono',monospace;color:var(--ink3);flex-shrink:0;margin-left:8px;">30g</span></div>
-          <div style="font-size:12px;color:var(--ink2);display:flex;justify-content:space-between;"><span>Rolled oats</span><span style="font-family:'DM Mono',monospace;color:var(--ink3);flex-shrink:0;margin-left:8px;">20g</span></div>
-          <div style="font-size:12px;color:var(--ink2);display:flex;justify-content:space-between;"><span>Chia seeds</span><span style="font-family:'DM Mono',monospace;color:var(--ink3);flex-shrink:0;margin-left:8px;">10g</span></div>
-          <div style="font-size:12px;color:var(--ink2);display:flex;justify-content:space-between;"><span>Greek yoghurt 0% fat</span><span style="font-family:'DM Mono',monospace;color:var(--ink3);flex-shrink:0;margin-left:8px;">45g</span></div>
-          <div style="font-size:12px;color:var(--ink2);display:flex;justify-content:space-between;"><span>Blueberries</span><span style="font-family:'DM Mono',monospace;color:var(--ink3);flex-shrink:0;margin-left:8px;">25g</span></div>
-          <div style="font-size:12px;color:var(--ink2);display:flex;justify-content:space-between;"><span>Walnuts</span><span style="font-family:'DM Mono',monospace;color:var(--ink3);flex-shrink:0;margin-left:8px;">5g</span></div>
-          <div style="margin-top:4px;padding-top:6px;border-top:1px dashed var(--border);font-size:11px;color:var(--ink3);font-style:italic;">+ 5g creatine · 5g collagen · psyllium husk supplement</div>
-        </div>
+        <div id="train-breakfast-foods" style="padding:10px 16px;display:flex;flex-direction:column;gap:5px;"></div>
       </div>
 
       <!-- T: Lunch -->
       <div style="margin:0 16px 10px;background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-sm);">
         <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--paper);">
           <div style="width:34px;height:34px;border-radius:var(--r-sm);background:var(--sage-bg);display:flex;align-items:center;justify-content:center;color:var(--ink2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></div>
-          <div style="flex:1;"><div style="font-size:13px;font-weight:600;">Lunch</div><div style="font-size:11px;color:var(--ink3);">449 kcal · 37.5g protein</div></div>
-          <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--sage-dk);">P37.5 · C26.1 · F20.6</div>
+          <div style="flex:1;"><div style="font-size:13px;font-weight:600;">Lunch</div><div id="train-lunch-sub" style="font-size:11px;color:var(--ink3);">loading…</div></div>
+          <div id="train-lunch-macros" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--sage-dk);"></div>
         </div>
-        <div style="padding:10px 16px;display:flex;flex-direction:column;gap:5px;">
-          <div style="font-size:12px;color:var(--ink2);display:flex;justify-content:space-between;"><span>Boiled eggs</span><span style="font-family:'DM Mono',monospace;color:var(--ink3);flex-shrink:0;margin-left:8px;">2 medium</span></div>
-          <div style="font-size:12px;color:var(--ink2);display:flex;justify-content:space-between;"><span>Red Sacla pesto</span><span style="font-family:'DM Mono',monospace;color:var(--ink3);flex-shrink:0;margin-left:8px;">25g</span></div>
-          <div style="font-size:12px;color:var(--ink2);display:flex;justify-content:space-between;"><span>Butter beans</span><span style="font-family:'DM Mono',monospace;color:var(--ink3);flex-shrink:0;margin-left:8px;">75g</span></div>
-          <div style="font-size:12px;color:var(--ink2);display:flex;justify-content:space-between;"><span>Greek yoghurt 0% fat</span><span style="font-family:'DM Mono',monospace;color:var(--ink3);flex-shrink:0;margin-left:8px;">200g</span></div>
-          <div style="font-size:12px;color:var(--ink2);display:flex;justify-content:space-between;"><span>Tomato · cabbage · capsicum</span><span style="font-family:'DM Mono',monospace;color:var(--ink3);flex-shrink:0;margin-left:8px;">30g each</span></div>
-          <div style="margin-top:4px;padding-top:6px;border-top:1px dashed var(--border);font-size:11px;color:var(--ink3);font-style:italic;">+ omega 3 capsules · multivitamins</div>
-        </div>
-      </div>
-
-      <!-- T: Pre-Workout -->
-      <div style="margin:0 16px 10px;background:var(--white);border:1.5px solid var(--rose);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-sm);">
-        <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--rose);background:var(--rose-bg);">
-          <div style="width:34px;height:34px;border-radius:var(--r-sm);background:var(--white);display:flex;align-items:center;justify-content:center;color:var(--ink2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
-          <div style="flex:1;"><div style="font-size:13px;font-weight:600;color:var(--rose-dk);">Pre-Workout</div><div style="font-size:11px;color:var(--rose-dk);opacity:0.8;">185 kcal · fast carbs before training</div></div>
-          <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--rose-dk);">P2.1 · C37.1 · F5.3</div>
-        </div>
-        <div style="padding:10px 16px;display:flex;flex-direction:column;gap:5px;">
-          <div style="font-size:12px;color:var(--ink2);display:flex;justify-content:space-between;"><span>Dates</span><span style="font-family:'DM Mono',monospace;color:var(--ink3);flex-shrink:0;margin-left:8px;">2</span></div>
-          <div style="font-size:12px;color:var(--ink2);display:flex;justify-content:space-between;"><span>Walnut halves</span><span style="font-family:'DM Mono',monospace;color:var(--ink3);flex-shrink:0;margin-left:8px;">4</span></div>
-          <div style="font-size:12px;color:var(--ink2);display:flex;justify-content:space-between;"><span>Full fat milk</span><span style="font-family:'DM Mono',monospace;color:var(--ink3);flex-shrink:0;margin-left:8px;">50ml</span></div>
-        </div>
+        <div id="train-lunch-foods" style="padding:10px 16px;display:flex;flex-direction:column;gap:5px;"></div>
       </div>
 
       <!-- T: Dinner A -->
       <div style="margin:0 16px 10px;background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-sm);">
         <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--paper);">
           <div style="width:34px;height:34px;border-radius:var(--r-sm);background:var(--mauve-bg);display:flex;align-items:center;justify-content:center;color:var(--ink2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></div>
-          <div style="flex:1;"><div style="font-size:13px;font-weight:600;">Dinner A</div><div style="font-size:11px;color:var(--ink3);">389 kcal · 45.3g protein</div></div>
-          <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--mauve-dk);">P45.3 · C21.3 · F12.1</div>
+          <div style="flex:1;"><div style="font-size:13px;font-weight:600;">Dinner A</div><div id="train-dinnerA-sub" style="font-size:11px;color:var(--ink3);">loading…</div></div>
+          <div id="train-dinnerA-macros" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--mauve-dk);"></div>
         </div>
-        <div style="padding:10px 16px;display:flex;flex-direction:column;gap:5px;">
-          <div style="font-size:12px;color:var(--ink2);display:flex;justify-content:space-between;"><span>Canned tuna</span><span style="font-family:'DM Mono',monospace;color:var(--ink3);flex-shrink:0;margin-left:8px;">120g</span></div>
-          <div style="font-size:12px;color:var(--ink2);display:flex;justify-content:space-between;"><span>Greek yoghurt 0% fat</span><span style="font-family:'DM Mono',monospace;color:var(--ink3);flex-shrink:0;margin-left:8px;">100g</span></div>
-          <div style="font-size:12px;color:var(--ink2);display:flex;justify-content:space-between;"><span>Butter beans</span><span style="font-family:'DM Mono',monospace;color:var(--ink3);flex-shrink:0;margin-left:8px;">75g</span></div>
-          <div style="font-size:12px;color:var(--ink2);display:flex;justify-content:space-between;"><span>Red Sacla pesto</span><span style="font-family:'DM Mono',monospace;color:var(--ink3);flex-shrink:0;margin-left:8px;">25g</span></div>
-          <div style="font-size:12px;color:var(--ink2);display:flex;justify-content:space-between;"><span>Tomato · cabbage · capsicum</span><span style="font-family:'DM Mono',monospace;color:var(--ink3);flex-shrink:0;margin-left:8px;">30g each</span></div>
-        </div>
+        <div id="train-dinnerA-foods" style="padding:10px 16px;display:flex;flex-direction:column;gap:5px;"></div>
       </div>
 
       <!-- T: Dinner B -->
       <div style="margin:0 16px 10px;background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-sm);">
         <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--paper);">
           <div style="width:34px;height:34px;border-radius:var(--r-sm);background:var(--peach-bg);display:flex;align-items:center;justify-content:center;color:var(--ink2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></div>
-          <div style="flex:1;"><div style="font-size:13px;font-weight:600;">Dinner B</div><div style="font-size:11px;color:var(--ink3);">447 kcal · 38.6g protein</div></div>
-          <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--peach-dk);">P38.6 · C14.6 · F26.1</div>
+          <div style="flex:1;"><div style="font-size:13px;font-weight:600;">Dinner B</div><div id="train-dinnerB-sub" style="font-size:11px;color:var(--ink3);">loading…</div></div>
+          <div id="train-dinnerB-macros" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--peach-dk);"></div>
         </div>
-        <div style="padding:10px 16px;display:flex;flex-direction:column;gap:5px;">
-          <div style="font-size:12px;color:var(--ink2);display:flex;justify-content:space-between;"><span>Green Village tofu</span><span style="font-family:'DM Mono',monospace;color:var(--ink3);flex-shrink:0;margin-left:8px;">250g</span></div>
-          <div style="font-size:12px;color:var(--ink2);display:flex;justify-content:space-between;"><span>Greek yoghurt 0% fat</span><span style="font-family:'DM Mono',monospace;color:var(--ink3);flex-shrink:0;margin-left:8px;">100g</span></div>
-          <div style="font-size:12px;color:var(--ink2);display:flex;justify-content:space-between;"><span>Boiled egg</span><span style="font-family:'DM Mono',monospace;color:var(--ink3);flex-shrink:0;margin-left:8px;">1</span></div>
-          <div style="font-size:12px;color:var(--ink2);display:flex;justify-content:space-between;"><span>Red Sacla pesto</span><span style="font-family:'DM Mono',monospace;color:var(--ink3);flex-shrink:0;margin-left:8px;">15g</span></div>
-          <div style="font-size:12px;color:var(--ink2);display:flex;justify-content:space-between;"><span>Cabbage · tomato · capsicum</span><span style="font-family:'DM Mono',monospace;color:var(--ink3);flex-shrink:0;margin-left:8px;">30g each</span></div>
-        </div>
-      </div>
-
-      <!-- T: Snack -->
-      <div style="margin:0 16px 10px;background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-sm);">
-        <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--paper);">
-          <div style="width:34px;height:34px;border-radius:var(--r-sm);background:var(--lemon-bg);display:flex;align-items:center;justify-content:center;color:var(--ink2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
-          <div style="flex:1;"><div style="font-size:13px;font-weight:600;">Snack</div><div style="font-size:11px;color:var(--ink3);">129 kcal · 1.8g protein</div></div>
-          <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--lemon-dk);">P1.8 · C18 · F5.7</div>
-        </div>
-        <div style="padding:10px 16px;display:flex;flex-direction:column;gap:5px;">
-          <div style="font-size:12px;color:var(--ink2);display:flex;justify-content:space-between;"><span>Milk Waitrose biscuits</span><span style="font-family:'DM Mono',monospace;color:var(--ink3);flex-shrink:0;margin-left:8px;">2</span></div>
-        </div>
-      </div>
-
-      <div style="margin:4px 16px 16px;padding:12px 14px;background:var(--paper);border-radius:var(--r-sm);border:1px solid var(--border);">
-        <div style="font-size:11px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:5px;">Dinner A vs B</div>
-        <div style="font-size:13px;color:var(--ink);line-height:1.6;">Dinner A (tuna) = 1,550 kcal · Dinner B (tofu) = 1,610 kcal. Rotate based on preference — both hit the target.</div>
+        <div id="train-dinnerB-foods" style="padding:10px 16px;display:flex;flex-direction:column;gap:5px;"></div>
       </div>
     </div>
 
@@ -1392,18 +1343,18 @@ const CUSTOM_DAY = { name:"Custom", focus:"Your own session", warmup:[], exercis
 
 const PROGRAM = {
   1: {
-    mon: lowerADay("Monday"),
-    tue: upperADay("Tuesday"),
+    mon: { ...REST_DAY, name:"Monday" },
+    tue: lowerADay("Tuesday"),
     wed: { ...REST_DAY, name:"Wednesday" },
-    thu: lowerBDay("Thursday"),
-    fri: upperBDay("Friday"),
-    sat: { ...REST_DAY, name:"Saturday" },
-    sun: { ...REST_DAY, name:"Sunday" },
+    thu: upperADay("Thursday"),
+    fri: { ...REST_DAY, name:"Friday" },
+    sat: lowerBDay("Saturday"),
+    sun: upperBDay("Sunday"),
     custom: CUSTOM_DAY,
   }
 };
 
-const DAY_KEYS = ['mon','tue','thu','fri'];
+const DAY_KEYS = ['tue','thu','sat','sun'];
 const PROG_VIEW_KEYS = ['mon','tue','wed','thu','fri','sat','sun'];
 const MEALS = [
   {name:"Breakfast",color:"#f9b8c4",kcal:398,foods:["150ml skim milk","30g whey protein","20g rolled oats","10g chia seeds","45g Greek yoghurt 0%","25g blueberries","5g walnuts","5g creatine · 5g collagen · psyllium husk"],macros:"P: 43.5g · C: 34g · F: 10.6g"},
@@ -1494,28 +1445,28 @@ function loadMockData() {
   const dayNamesFull = { mon:'Monday', tue:'Tuesday', wed:'Wednesday', thu:'Thursday', fri:'Friday', sat:'Saturday', sun:'Sunday' };
   const todayDow = new Date(now).getDay();
   const thisMonday = now - ((todayDow + 6) % 7) * day;
-  const dayIdx = { mon:0, tue:1, thu:3, fri:4 };
+  const dayIdx = { tue:1, thu:3, sat:5, sun:6 };
   const SESSION_TEMPLATES = {
-    mon: { focus:'Lower A — Glute Focus', vol:2300, build: n => ({
+    tue: { focus:'Lower A — Glute Focus', vol:2300, build: n => ({
       '0':{name:'Hip Thrust',            w:50 + 2.5*n,        r: n>=2?10:9},
       '1':{name:'Bulgarian Split Squat',  w: n<2?10:12,        r:10},
       '2':{name:'Hip Abduction',          w: n<2?30:32.5,      r: n<2?15:12},
       '3':{name:'Back Extension',         w: n===0?0:2.5,      r: n===2?12:10},
     })},
-    tue: { focus:'Upper A — Chest Focus', vol:1450, build: n => ({
+    thu: { focus:'Upper A — Chest Focus', vol:1450, build: n => ({
       '0':{name:'Incline Press',          w:10 + 2*n,          r: n===2?8:9},
       '1':{name:'Lat Pulldown',           w: n<2?35:37.5,      r: n<2?10:9},
       '2':{name:'Seated Shoulder Press',  w: n<2?8:10,         r: n===0?9:(n===1?10:9)},
       '3':{name:'Dead Bug',               w:null,              r:10 + n},
       '4':{name:'Face Pull',              w: n<2?10:12.5,      r:15},
     })},
-    thu: { focus:'Lower B', vol:1680, build: n => ({
+    sat: { focus:'Lower B', vol:1680, build: n => ({
       '0':{name:'Romanian Deadlift',      w:40 + 2.5*n,        r:8},
       '1':{name:'Goblet Squat',           w: n<2?16:18,        r: n<2?9+n:8},
       '2':{name:'Cable Kickback',         w: n===2?10:7.5,     r: n===2?10:12},
       '3':{name:'Calf Raise',             w:12 + (n===2?2:0),  r: n>0?15:14},
     })},
-    fri: { focus:'Upper B + Intervals', vol:1500, build: n => ({
+    sun: { focus:'Upper B + Intervals', vol:1500, build: n => ({
       '0':{name:'Flat Press',             w:12 + 2*n,          r:9},
       '1':{name:'Seated Row',             w:35,                r:10},
       '2':{name:'Lateral Raise',          w:4,                 r:14 + n},
@@ -1528,7 +1479,7 @@ function loadMockData() {
   appState.workoutHistory = [];
   let counter = 1;
   for (let wk = 2; wk >= 0; wk--) {
-    ['mon','tue','thu','fri'].forEach(k => {
+    ['tue','thu','sat','sun'].forEach(k => {
       const ts = thisMonday - wk * 7 * day + dayIdx[k] * day;
       if (ts >= now) return; // don't log a session for today or the future
       const n = 2 - wk; // 0 = oldest occurrence, 2 = most recent
@@ -3138,6 +3089,23 @@ function renderLiveNutrition() {
   renderRestMealCard('rest-lunch-foods', 'rest-lunch-sub', 'rest-lunch-macros', d.restMeals.lunch, perMeal);
   renderRestMealCard('rest-dinnerA-foods', 'rest-dinnerA-sub', 'rest-dinnerA-macros', d.restMeals.dinnerA, perMeal);
   renderRestMealCard('rest-dinnerB-foods', 'rest-dinnerB-sub', 'rest-dinnerB-macros', d.restMeals.dinnerB, perMeal);
+
+  // Training-day meals: a fixed pre-workout snack, then breakfast/lunch/dinner split the remainder evenly.
+  if (d.trainingMeals) {
+    const preM = d.training.preWorkoutMacros || { p: 5, c: 30, f: 10, cals: 5 * 4 + 30 * 4 + 10 * 9 };
+    const mainM = d.training.mealMacros || (() => {
+      const p = Math.round((d.training.proteinG - preM.p) / 3);
+      const c = Math.round((d.training.carbsG - preM.c) / 3);
+      const f = Math.round((d.training.fatG - preM.f) / 3);
+      return { p, c, f, cals: p * 4 + c * 4 + f * 9 };
+    })();
+
+    renderRestMealCard('train-preworkout-foods', 'train-preworkout-sub', 'train-preworkout-macros', d.trainingMeals.preWorkout, preM);
+    renderRestMealCard('train-breakfast-foods', 'train-breakfast-sub', 'train-breakfast-macros', d.trainingMeals.breakfast, mainM);
+    renderRestMealCard('train-lunch-foods', 'train-lunch-sub', 'train-lunch-macros', d.trainingMeals.lunch, mainM);
+    renderRestMealCard('train-dinnerA-foods', 'train-dinnerA-sub', 'train-dinnerA-macros', d.trainingMeals.dinnerA, mainM);
+    renderRestMealCard('train-dinnerB-foods', 'train-dinnerB-sub', 'train-dinnerB-macros', d.trainingMeals.dinnerB, mainM);
+  }
 }
 
 function renderLiveNutritionUnavailable() {
@@ -3146,7 +3114,8 @@ function renderLiveNutritionUnavailable() {
   setText('rest-macro-label', 'Rest Day · live data unavailable');
   setText('rest-macro-note', "Couldn't reach North Star — showing last known layout only.");
   ['train-protein','train-carbs','train-fats','train-kcal','rest-protein','rest-carbs','rest-fats','rest-kcal'].forEach(id => setText(id, '—'));
-  ['rest-breakfast-foods','rest-lunch-foods','rest-dinnerA-foods','rest-dinnerB-foods'].forEach(id => {
+  ['rest-breakfast-foods','rest-lunch-foods','rest-dinnerA-foods','rest-dinnerB-foods',
+   'train-preworkout-foods','train-breakfast-foods','train-lunch-foods','train-dinnerA-foods','train-dinnerB-foods'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.innerHTML = `<div style="font-size:12px;color:var(--ink3);font-style:italic;">Couldn't reach North Star — check your connection and reopen this page.</div>`;
   });
@@ -4013,10 +3982,10 @@ function renderVolumeChart() {
   if (volumeChartMode === 'focus') {
     const days = [
       { k: 'all', n: 'All days' },
-      { k: 'mon', n: 'Mon — Lower A' },
-      { k: 'tue', n: 'Tue — Upper A' },
-      { k: 'thu', n: 'Thu — Lower B' },
-      { k: 'fri', n: 'Fri — Upper B' },
+      { k: 'tue', n: 'Tue — Lower A' },
+      { k: 'thu', n: 'Thu — Upper A' },
+      { k: 'sat', n: 'Sat — Lower B' },
+      { k: 'sun', n: 'Sun — Upper B' },
     ];
     if (focusRow) {
       focusRow.style.display = 'flex';
