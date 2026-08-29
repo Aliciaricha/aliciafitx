@@ -1200,13 +1200,17 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
   <div style="padding:14px 16px 10px;">
     <div class="section-label" style="margin:0 0 12px;padding:0;">Session History</div>
     <div style="display:flex;flex-direction:column;gap:8px;">
+      <button onclick="emailProgrammeAndHistory()" style="display:flex;align-items:center;gap:8px;padding:11px 16px;background:var(--charcoal);border:1px solid var(--charcoal);border-radius:var(--r-sm);font-size:13px;font-weight:600;color:#fff;cursor:pointer;text-align:left;width:100%;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        Email programme + workout history
+      </button>
       <button onclick="emailMonthSummary()" style="display:flex;align-items:center;gap:8px;padding:11px 16px;background:#ffffff;border:1px solid var(--border);border-radius:var(--r-sm);font-size:13px;font-weight:500;color:var(--charcoal);cursor:pointer;text-align:left;width:100%;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-        Export workouts
+        Export this month's workouts
       </button>
       <button onclick="exportProgramme()" style="display:flex;align-items:center;gap:8px;padding:11px 16px;background:#ffffff;border:1px solid var(--border);border-radius:var(--r-sm);font-size:13px;font-weight:500;color:var(--charcoal);cursor:pointer;text-align:left;width:100%;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-        Export programme
+        Export programme only
       </button>
     </div>
   </div>
@@ -3354,6 +3358,127 @@ function exportProgramme() {
 }
 
 /* ═══════════════════════════════════════════════════════
+   EXPORT PROGRAMME + FULL HISTORY (single email)
+═══════════════════════════════════════════════════════ */
+function buildProgrammeText() {
+  const DAY_NAMES = { mon:'Monday', tue:'Tuesday', wed:'Wednesday', thu:'Thursday', fri:'Friday', sat:'Saturday', sun:'Sunday' };
+  const lines = [];
+
+  PROG_VIEW_KEYS.forEach(k => {
+    const day = PROGRAM[progPhase][k];
+    if (day.isRest) {
+      lines.push(`${DAY_NAMES[k] || day.name}  —  Rest`);
+      lines.push('');
+      return;
+    }
+    lines.push(`${DAY_NAMES[k] || day.name}  —  ${day.focus}`);
+    lines.push('─'.repeat(28));
+
+    if (day.warmup && day.warmup.length) {
+      lines.push('Warm-Up:');
+      day.warmup.forEach(w => lines.push(`  • ${w.name}  ${w.reps}`));
+      lines.push('');
+    }
+
+    day.exercises.forEach(ex => {
+      const tgt = getTarget(ex.name);
+      const tgtStr = tgt ? `  →  Target: ${tgt.w}` : '';
+      if (ex.cardio && ex.cardioDetails) {
+        const cd = ex.cardioDetails;
+        lines.push(`  • ${ex.name}  ${cd.duration}  ${cd.incline || cd.difficulty || ''}  ${cd.speed || ''}`.trim());
+      } else {
+        lines.push(`  • ${ex.name}  ${ex.sets}×${ex.reps}${tgtStr}${ex.key ? '  ★ Key lift' : ''}`);
+      }
+    });
+    lines.push('');
+  });
+
+  return lines.join('\n');
+}
+
+function buildFullHistoryText() {
+  const history = [...(appState.workoutHistory || [])].sort((a, b) => a.ts - b.ts);
+  if (!history.length) return null;
+
+  const pbs = appState.pbs || {};
+  const totalVol = history.reduce((s, h) => s + (h.vol || 0), 0);
+  const totalSets = history.reduce((s, h) => s + (h.totalSets || 0), 0);
+  const firstDate = new Date(history[0].ts).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+  const lastDate  = new Date(history[history.length - 1].ts).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+  const totalWeeks = Math.max(1, Math.ceil((Date.now() - appState.startDate) / (7 * 24 * 3600 * 1000)));
+
+  const KEY_LIFTS = ['Hip Thrust','Romanian Deadlift','Squat','DB Bulgarian Split Squat','Wide Grip Lat Pulldown','Dumbbell Bench Press','Seated Arnold Press','Cable Glute Kickback','Staggered Stance RDL'];
+  const pbLines = KEY_LIFTS.map(l => {
+    const pb  = pbs[l];
+    const tgt = appState.targets[l];
+    const pbStr  = pb  ? `${pb.w}kg × ${pb.r} reps` : 'Not logged yet';
+    const tgtStr = tgt ? `Target: ${tgt.w}` : '';
+    return `  • ${l}: ${pbStr}${tgtStr ? `  [${tgtStr}]` : ''}`;
+  }).join('\n');
+
+  const sessionLines = history.map(h => {
+    const date = new Date(h.ts).toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
+    const lines = [`${date} — ${h.dayName}: ${h.focus} (Phase ${h.phase})`];
+    lines.push(`  Sets: ${h.totalSets || 0}  ·  Volume: ${h.vol || 0}kg  ·  Completion: ${h.pct || '?'}%`);
+    if (h.sets && Object.keys(h.sets).length) {
+      const byEx = {};
+      Object.values(h.sets).forEach(set => {
+        if (!set?.name) return;
+        if (!byEx[set.name]) byEx[set.name] = [];
+        byEx[set.name].push(set);
+      });
+      Object.entries(byEx).forEach(([name, sets]) => {
+        const detail = sets.map(s => s.w ? `${s.w}kg×${s.r}` : s.r ? `${s.r}s` : '—').join(', ');
+        const tgt = appState.targets[name];
+        const tgtNote = tgt ? ` [target: ${tgt.w}]` : '';
+        lines.push(`  • ${name}: ${detail}${tgtNote}`);
+      });
+    }
+    return lines.join('\n');
+  }).join('\n\n');
+
+  return `OVERVIEW
+${'─'.repeat(50)}
+Programme start:    ${firstDate}
+Last session:       ${lastDate}
+Week:               ${totalWeeks} of 8
+Total sessions:     ${history.length}
+Total sets:         ${totalSets}
+Total volume:       ${Math.round(totalVol).toLocaleString()}kg
+
+PERSONAL BESTS vs TARGETS
+${'─'.repeat(50)}
+${pbLines}
+
+FULL SESSION LOG
+${'─'.repeat(50)}
+${sessionLines}`;
+}
+
+function emailProgrammeAndHistory() {
+  const programmeText = buildProgrammeText();
+  const historyText = buildFullHistoryText();
+
+  const body =
+`ALICIAFIT — TRAINING PROGRAMME + HISTORY
+${'═'.repeat(50)}
+
+TRAINING PROGRAMME
+${'═'.repeat(50)}
+${programmeText}
+${'═'.repeat(50)}
+WORKOUT HISTORY
+${'═'.repeat(50)}
+${historyText || 'No workouts logged yet.'}
+
+${'═'.repeat(50)}
+Generated by ALICIAFIT`;
+
+  const subject = encodeURIComponent('ALICIAFIT — My Training Programme & Workout History');
+  window.location.href = `mailto:contact@aliciarichardson.co.uk?subject=${subject}&body=${encodeURIComponent(body)}`;
+}
+
+/* ═══════════════════════════════════════════════════════
    EXPORT FULL HISTORY FOR AI REVIEW
 ═══════════════════════════════════════════════════════ */
 function emailFullHistory() {
@@ -4438,6 +4563,7 @@ window.calNext = calNext;
 window.emailMonthSummary = emailMonthSummary;
 window.emailSummary = emailSummary;
 window.emailFullHistory = emailFullHistory;
+window.emailProgrammeAndHistory = emailProgrammeAndHistory;
 window.exportProgramme = exportProgramme;
 window.nutSwitch = nutSwitch;
 window.addFood = addFood;
