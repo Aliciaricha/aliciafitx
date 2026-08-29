@@ -798,7 +798,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 <div id="page-program" class="page">
   <div class="prog-header px">
     <h1 class="serif">Program</h1>
-    <p>One phase. Keep going. Progress the weight.</p>
+    <p>Sculpt — 4 lifting days + intervals. Keep going. Progress the weight.</p>
   </div>
   <div style="height:8px"></div>
   <div id="prog-days"></div>
@@ -1287,32 +1287,96 @@ const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 /* ═══════════════════════════════════════════════════════
    PROGRAM DATA
 ═══════════════════════════════════════════════════════ */
+/* ── "Sculpt" — 4 lifting days/week + interval finisher ──
+   Progression rule (all weighted lifts):
+   - First exercise of each day: linear — add weight every session,
+     or a rep if no smaller weight jump is available.
+   - Every other exercise: once all sets hit the top of the rep
+     range, add the smallest weight increment. */
 const REST = { compound:90, accessory:60, circuit:30, cardio:0 };
-const FULL_BODY_EXERCISES = [
-  {name:"Hip Thrust",type:"Compound",sets:4,reps:"10 reps",rest:REST.compound,note:"Barbell on floor, pad over hips, upper back against flat bench. Drive through heels, squeeze at top 1 sec. Mon, Wed and Sat — same weight, all three sessions move up together. +2.5kg every session.",key:true},
-  {name:"Squat",type:"Compound",sets:4,reps:"8 reps",rest:REST.compound,note:"Barbell back squat. Bar on upper back, feet shoulder-width, break at hips and knees together, full depth. Starting at 20kg (bar only). +2.5kg every session.",key:true},
-  {name:"Barbell Overhead Press",type:"Compound",sets:3,reps:"12 reps",rest:REST.compound,note:"Standing barbell press, bar starts at shoulders, press straight overhead, ribs down. Starting at 20kg (bar only). Weight stays put until all 3 sets hit 12 clean reps, then +2.5kg."},
-  {name:"Deadlift",type:"Compound",sets:3,reps:"5 reps",rest:REST.compound,note:"Conventional barbell deadlift from the floor. Flat back throughout, bar close to shins. Starting at 20kg (bar only). +2.5kg every session."},
-  {name:"Press Up",type:"Accessory",sets:3,reps:"10 reps",rest:REST.accessory,note:"Bodyweight push-up, full range, chest to floor. One more rep every session."},
-  {name:"Leg Raises",type:"Core",sets:3,reps:"12 reps",rest:REST.circuit,note:"Lying flat on back, legs straight, lower slow and controlled without arching the lower back off the floor. One more rep every session."},
+
+const LOWER_A_EXERCISES = [
+  {name:"Hip Thrust",           type:"Compound", equipment:"Barbell",              sets:4, reps:"8–10",    rest:REST.compound,  metric:"kg_total", key:true,
+    note:"Barbell across hips, upper back on a bench, feet flat. Drive through heels, squeeze at the top. First lift of the day — add weight every session (or a rep if no smaller plate is available). Start 50kg, aim ~105kg by 6 months."},
+  {name:"Bulgarian Split Squat", type:"Accessory", equipment:"Dumbbells (pair)",    sets:3, reps:"10/leg",  rest:REST.accessory, metric:"kg_per_db",
+    note:"Rear foot elevated on a bench, DB in each hand. When all 3 sets hit 10 clean reps per leg, add weight. Start 10kg/DB, aim ~20kg/DB."},
+  {name:"Hip Abduction",         type:"Accessory", equipment:"Machine",            sets:3, reps:"15",      rest:REST.accessory, metric:"kg_stack",
+    note:"Full range, controlled return, no momentum. When all 3 sets hit 15 clean reps, add weight. Start 30kg, aim ~60kg."},
+  {name:"Back Extension",        type:"Accessory", equipment:"Bodyweight → plate", sets:3, reps:"12",      rest:REST.accessory, metric:"kg_added",
+    note:"Bodyweight to start (0kg); hold a plate to your chest once that feels easy. When all 3 sets hit 12 clean reps, add weight. Aim ~17.5kg held by 6 months."},
+];
+
+const UPPER_A_EXERCISES = [
+  {name:"Incline Press",        type:"Compound", equipment:"Dumbbells (pair)",    sets:4, reps:"8–10",    rest:REST.compound,  metric:"kg_per_db", key:true,
+    note:"Incline bench, DB in each hand, press up and slightly in. First lift of the day — add weight every session (or a rep if no smaller DB is available). Start 10kg/DB, aim ~18.5kg/DB."},
+  {name:"Lat Pulldown",         type:"Accessory", equipment:"Cable machine",      sets:3, reps:"10",      rest:REST.accessory, metric:"kg_stack",
+    note:"Wide grip, full stretch at the top, drive elbows down and back. When all 3 sets hit 10 clean reps, add weight. Start 35kg, aim ~52.5kg."},
+  {name:"Seated Shoulder Press", type:"Accessory", equipment:"Dumbbells (pair)",   sets:3, reps:"10",      rest:REST.accessory, metric:"kg_per_db",
+    note:"Seated, DB in each hand, press straight overhead without arching the back. When all 3 sets hit 10 clean reps, add weight. Start 8kg/DB, aim ~14kg/DB."},
+  {name:"Dead Bug",              type:"Core",      equipment:"Bodyweight",        sets:3, reps:"10/side", rest:REST.circuit,   metric:"reps",
+    note:"Lower back pressed flat to the floor throughout, slow controlled tempo. One more rep per side every session — aim for 12/side at a 3-second tempo per rep."},
+];
+
+const LOWER_B_EXERCISES = [
+  {name:"Romanian Deadlift",    type:"Compound", equipment:"Barbell",             sets:3, reps:"8",       rest:REST.compound,  metric:"kg_total", key:true,
+    note:"Hip hinge, bar stays close to the shins, deep hamstring stretch. First lift of the day — add weight every session (or a rep if no smaller plate is available). Start 40kg, aim ~75kg."},
+  {name:"Goblet Squat",          type:"Accessory", equipment:"Single dumbbell",    sets:3, reps:"10",      rest:REST.accessory, metric:"kg_single",
+    note:"One DB held at the chest, squat to full depth. When all 3 sets hit 10 clean reps, add weight. Start 16kg, aim ~30kg."},
+  {name:"Cable Kickback",        type:"Accessory", equipment:"Cable + ankle strap",sets:3, reps:"12/leg",  rest:REST.accessory, metric:"kg_stack",
+    note:"Ankle strap, squeeze the glute hard at full extension, controlled return. When all 3 sets hit 12 clean reps, add weight. Start 7.5kg, aim ~16kg."},
+  {name:"Calf Raise",            type:"Accessory", equipment:"Dumbbells (pair)",   sets:3, reps:"15",      rest:REST.accessory, metric:"kg_per_db",
+    note:"Full stretch at the bottom, pause and squeeze at the top. When all 3 sets hit 15 clean reps, add weight. Start 12kg/DB, aim ~22kg/DB."},
+];
+
+const UPPER_B_EXERCISES = [
+  {name:"Flat Press",           type:"Compound", equipment:"Dumbbells (pair)",    sets:3, reps:"10",      rest:REST.compound,  metric:"kg_per_db", key:true,
+    note:"Flat bench, DB in each hand, elbows at ~45°. First lift of the day — add weight every session (or a rep if no smaller DB is available). Start 12kg/DB, aim ~20kg/DB."},
+  {name:"Seated Row",            type:"Accessory", equipment:"Cable machine",      sets:3, reps:"10",      rest:REST.accessory, metric:"kg_stack",
+    note:"Chest up, squeeze shoulder blades together at full contraction. When all 3 sets hit 10 clean reps, add weight. Start 35kg, aim ~52.5kg."},
+  {name:"Lateral Raise",         type:"Accessory", equipment:"Dumbbells (pair)",   sets:3, reps:"15",      rest:REST.accessory, metric:"kg_per_db",
+    note:"Strict form, raise to shoulder height only, no swing. When all 3 sets hit 15 clean reps, add weight. Start 4kg/DB, aim ~9kg/DB."},
+  {name:"Hollow Body Hold",      type:"Core",      equipment:"Bodyweight",         sets:3, reps:"20 sec",  rest:REST.circuit,   metric:"seconds",
+    note:"Lower back pressed to the floor. Breathe normally throughout — do not hold your breath. Log your best hold of the 3. Aim for 50 seconds by 6 months."},
+  {name:"Intervals — 4×4",       type:"Interval",  equipment:"Bike / Stairmaster / Incline Treadmill", sets:1, reps:"4 rounds", rest:0, metric:"interval_log", interval:true,
+    note:"4 rounds of 4 min hard + 3 min easy. \"Hard\" = can speak words, not full sentences. Beat last session's output at the same machine and round count. Aim for +15–20% output by 6 months."},
 ];
 
 const PROGRESSION_RULES = {
-  "Hip Thrust":              { mode: "weight", inc: 2.5 },
-  "Squat":                   { mode: "weight", inc: 2.5 },
-  "Deadlift":                { mode: "weight", inc: 2.5 },
-  "Barbell Overhead Press":  { mode: "weight-after-reps", inc: 2.5, repTarget: 12 },
-  "Press Up":                { mode: "reps", inc: 1 },
-  "Leg Raises":              { mode: "reps", inc: 1 },
+  // First exercise of each day — simple linear progression every session.
+  "Hip Thrust":            { mode: "weight", inc: 2.5 },
+  "Incline Press":         { mode: "weight", inc: 2 },
+  "Romanian Deadlift":     { mode: "weight", inc: 2.5 },
+  "Flat Press":            { mode: "weight", inc: 2 },
+  // Everyone else — hold reps until top of range on all sets, then add weight.
+  "Bulgarian Split Squat": { mode: "weight-after-reps", inc: 2,   repTarget: 10 },
+  "Hip Abduction":         { mode: "weight-after-reps", inc: 2.5, repTarget: 15 },
+  "Back Extension":        { mode: "weight-after-reps", inc: 2.5, repTarget: 12 },
+  "Lat Pulldown":          { mode: "weight-after-reps", inc: 2.5, repTarget: 10 },
+  "Seated Shoulder Press": { mode: "weight-after-reps", inc: 2,   repTarget: 10 },
+  "Goblet Squat":          { mode: "weight-after-reps", inc: 2,   repTarget: 10 },
+  "Cable Kickback":        { mode: "weight-after-reps", inc: 2.5, repTarget: 12 },
+  "Calf Raise":            { mode: "weight-after-reps", inc: 2,   repTarget: 15 },
+  "Seated Row":            { mode: "weight-after-reps", inc: 2.5, repTarget: 10 },
+  "Lateral Raise":         { mode: "weight-after-reps", inc: 1,   repTarget: 15 },
+  // Bodyweight rep progression.
+  "Dead Bug":              { mode: "reps", inc: 1 },
 };
 
-function fullBodyDay(name) {
-  return { name, focus:"Full Body", warmup:[
-    {name:"Bodyweight Squat",reps:"10 slow reps"},
-    {name:"Arm Circles",reps:"30 sec each direction"},
-    {name:"Hip Circles",reps:"10 reps each direction"},
-  ], exercises: FULL_BODY_EXERCISES };
-}
+const LOWER_A_WARMUP = [
+  {name:"Bodyweight Squat",reps:"10 slow reps"},
+  {name:"Glute Bridge",reps:"15 reps"},
+  {name:"Leg Swings",reps:"10 each direction, each leg"},
+];
+const UPPER_A_WARMUP = [
+  {name:"Band Pull-Apart",reps:"15 reps"},
+  {name:"Arm Circles",reps:"30 sec each direction"},
+  {name:"Scapular Push-Up",reps:"10 reps"},
+];
+
+function lowerADay(name) { return { name, focus:"Lower A — Glute Focus", warmup:LOWER_A_WARMUP, exercises:LOWER_A_EXERCISES }; }
+function upperADay(name) { return { name, focus:"Upper A — Chest Focus", warmup:UPPER_A_WARMUP, exercises:UPPER_A_EXERCISES }; }
+function lowerBDay(name) { return { name, focus:"Lower B", warmup:LOWER_A_WARMUP, exercises:LOWER_B_EXERCISES }; }
+function upperBDay(name) { return { name, focus:"Upper B + Intervals", warmup:UPPER_A_WARMUP, exercises:UPPER_B_EXERCISES }; }
 
 const REST_DAY = { name:"Rest", focus:"Rest & Recovery", isRest:true, warmup:[], exercises:[] };
 
@@ -1320,18 +1384,18 @@ const CUSTOM_DAY = { name:"Custom", focus:"Your own session", warmup:[], exercis
 
 const PROGRAM = {
   1: {
-    mon: fullBodyDay("Monday"),
-    tue: { ...REST_DAY, name:"Tuesday" },
-    wed: fullBodyDay("Wednesday"),
-    thu: { ...REST_DAY, name:"Thursday" },
-    fri: { ...REST_DAY, name:"Friday" },
-    sat: fullBodyDay("Saturday"),
+    mon: lowerADay("Monday"),
+    tue: upperADay("Tuesday"),
+    wed: { ...REST_DAY, name:"Wednesday" },
+    thu: lowerBDay("Thursday"),
+    fri: upperBDay("Friday"),
+    sat: { ...REST_DAY, name:"Saturday" },
     sun: { ...REST_DAY, name:"Sunday" },
     custom: CUSTOM_DAY,
   }
 };
 
-const DAY_KEYS = ['mon','wed','sat'];
+const DAY_KEYS = ['mon','tue','thu','fri'];
 const PROG_VIEW_KEYS = ['mon','tue','wed','thu','fri','sat','sun'];
 const MEALS = [
   {name:"Breakfast",color:"#f9b8c4",kcal:398,foods:["150ml skim milk","30g whey protein","20g rolled oats","10g chia seeds","45g Greek yoghurt 0%","25g blueberries","5g walnuts","5g creatine · 5g collagen · psyllium husk"],macros:"P: 43.5g · C: 34g · F: 10.6g"},
@@ -1416,34 +1480,55 @@ function loadMockData() {
 
   appState.startDate = now - 21 * day;
 
-  appState.workoutHistory = [
-    { id:'m1', ts: now - 18*day, phase:1, dayKey:'mon', dayName:'Monday',   focus:'Glutes, Quads & Hamstrings',
-      sets:{ '0':{name:'Plank',w:null,r:45}, '1':{name:'Barbell Hip Thrust',w:60,r:10}, '2':{name:'Squat',w:50,r:8}, '3':{name:'Romanian Deadlift',w:45,r:10} }, totalSets:16, vol:2800 },
-    { id:'m2', ts: now - 17*day, phase:1, dayKey:'tue', dayName:'Tuesday',  focus:'Back, Biceps & Core',
-      sets:{ '0':{name:'Wide Grip Lat Pulldown',w:40,r:10}, '1':{name:'Machine Row',w:42,r:10}, '2':{name:'Standing Alt DB Bicep Curl',w:10,r:12} }, totalSets:14, vol:2100 },
-    { id:'m3', ts: now - 16*day, phase:1, dayKey:'wed', dayName:'Wednesday',focus:'Glutes & Hamstrings',
-      sets:{ '0':{name:'Barbell Hip Thrust',w:65,r:10}, '1':{name:'Romanian Deadlift',w:47.5,r:10}, '2':{name:'Cable Glute Kickback',w:12,r:12} }, totalSets:13, vol:2650 },
-    { id:'m4', ts: now - 15*day, phase:1, dayKey:'thu', dayName:'Thursday', focus:'Push — Chest, Shoulders & Triceps',
-      sets:{ '0':{name:'Machine Chest Press',w:35,r:10}, '1':{name:'Seated Arnold Press',w:12,r:10}, '2':{name:'Dumbbell Bench Press',w:16,r:10} }, totalSets:12, vol:1900 },
-    { id:'m5', ts: now - 14*day, phase:1, dayKey:'fri', dayName:'Friday',   focus:'Glutes & Cardio',
-      sets:{ '0':{name:'Barbell Hip Thrust',w:70,r:8}, '1':{name:'Romanian Deadlift',w:50,r:10}, '2':{name:'Hyperextension',w:10,r:10} }, totalSets:13, vol:2500 },
-    { id:'m6', ts: now - 11*day, phase:1, dayKey:'mon', dayName:'Monday',   focus:'Glutes, Quads & Hamstrings',
-      sets:{ '0':{name:'Plank',w:null,r:50}, '1':{name:'Barbell Hip Thrust',w:70,r:10}, '2':{name:'Squat',w:52.5,r:8}, '3':{name:'Romanian Deadlift',w:50,r:10} }, totalSets:16, vol:3100 },
-    { id:'m7', ts: now - 10*day, phase:1, dayKey:'tue', dayName:'Tuesday',  focus:'Back, Biceps & Core',
-      sets:{ '0':{name:'Wide Grip Lat Pulldown',w:42,r:10}, '1':{name:'Machine Row',w:45,r:10}, '2':{name:'EZ Bar Bicep Curl',w:20,r:10} }, totalSets:14, vol:2300 },
-    { id:'m8', ts: now -  9*day, phase:1, dayKey:'wed', dayName:'Wednesday',focus:'Glutes & Hamstrings',
-      sets:{ '0':{name:'Barbell Hip Thrust',w:75,r:10}, '1':{name:'Romanian Deadlift',w:52.5,r:10}, '2':{name:'Cable Glute Kickback',w:14,r:12} }, totalSets:13, vol:2900 },
-    { id:'m9', ts: now -  8*day, phase:1, dayKey:'thu', dayName:'Thursday', focus:'Push — Chest, Shoulders & Triceps',
-      sets:{ '0':{name:'Machine Chest Press',w:37.5,r:10}, '1':{name:'Seated Arnold Press',w:13,r:10}, '2':{name:'Dumbbell Bench Press',w:17,r:10} }, totalSets:12, vol:2050 },
-    { id:'m10',ts: now -  7*day, phase:1, dayKey:'fri', dayName:'Friday',   focus:'Glutes & Cardio',
-      sets:{ '0':{name:'Barbell Hip Thrust',w:77.5,r:8}, '1':{name:'Romanian Deadlift',w:52.5,r:10}, '2':{name:'Hyperextension',w:12,r:10} }, totalSets:13, vol:2700 },
-    { id:'m11',ts: now -  4*day, phase:1, dayKey:'mon', dayName:'Monday',   focus:'Glutes, Quads & Hamstrings',
-      sets:{ '0':{name:'Plank',w:null,r:55}, '1':{name:'Barbell Hip Thrust',w:80,r:10}, '2':{name:'Squat',w:55,r:8}, '3':{name:'Romanian Deadlift',w:52.5,r:10} }, totalSets:16, vol:3400 },
-    { id:'m12',ts: now -  3*day, phase:1, dayKey:'tue', dayName:'Tuesday',  focus:'Back, Biceps & Core',
-      sets:{ '0':{name:'Wide Grip Lat Pulldown',w:45,r:10}, '1':{name:'Machine Row',w:47,r:10}, '2':{name:'Standing Alt DB Bicep Curl',w:11,r:12} }, totalSets:14, vol:2450 },
-    { id:'m13',ts: now -  2*day, phase:1, dayKey:'wed', dayName:'Wednesday',focus:'Glutes & Hamstrings',
-      sets:{ '0':{name:'Barbell Hip Thrust',w:82.5,r:10}, '1':{name:'Romanian Deadlift',w:55,r:10}, '2':{name:'Cable Glute Kickback',w:15,r:12} }, totalSets:13, vol:3100 },
-  ];
+  // Sessions are generated relative to the real current weekday so the mock
+  // Program/Calendar coloring (due/today/done/missed) always looks correct,
+  // however many days into the week this preview happens to be opened.
+  const dayNamesFull = { mon:'Monday', tue:'Tuesday', wed:'Wednesday', thu:'Thursday', fri:'Friday', sat:'Saturday', sun:'Sunday' };
+  const todayDow = new Date(now).getDay();
+  const thisMonday = now - ((todayDow + 6) % 7) * day;
+  const dayIdx = { mon:0, tue:1, thu:3, fri:4 };
+  const SESSION_TEMPLATES = {
+    mon: { focus:'Lower A — Glute Focus', vol:2300, build: n => ({
+      '0':{name:'Hip Thrust',            w:50 + 2.5*n,        r: n>=2?10:9},
+      '1':{name:'Bulgarian Split Squat',  w: n<2?10:12,        r:10},
+      '2':{name:'Hip Abduction',          w: n<2?30:32.5,      r: n<2?15:12},
+      '3':{name:'Back Extension',         w: n===0?0:2.5,      r: n===2?12:10},
+    })},
+    tue: { focus:'Upper A — Chest Focus', vol:1450, build: n => ({
+      '0':{name:'Incline Press',          w:10 + 2*n,          r: n===2?8:9},
+      '1':{name:'Lat Pulldown',           w: n<2?35:37.5,      r: n<2?10:9},
+      '2':{name:'Seated Shoulder Press',  w: n<2?8:10,         r: n===0?9:(n===1?10:9)},
+      '3':{name:'Dead Bug',               w:null,              r:10 + n},
+    })},
+    thu: { focus:'Lower B', vol:1680, build: n => ({
+      '0':{name:'Romanian Deadlift',      w:40 + 2.5*n,        r:8},
+      '1':{name:'Goblet Squat',           w: n<2?16:18,        r: n<2?9+n:8},
+      '2':{name:'Cable Kickback',         w: n===2?10:7.5,     r: n===2?10:12},
+      '3':{name:'Calf Raise',             w:12 + (n===2?2:0),  r: n>0?15:14},
+    })},
+    fri: { focus:'Upper B + Intervals', vol:1500, build: n => ({
+      '0':{name:'Flat Press',             w:12 + 2*n,          r:9},
+      '1':{name:'Seated Row',             w:35,                r:10},
+      '2':{name:'Lateral Raise',          w:4,                 r:14 + n},
+      '3':{name:'Hollow Body Hold',       w:null,              r:20 + 2*n},
+      '4':{name:'Intervals — 4×4',        machine: n%2===0?'bike':'stairs', output: n%2===0?'180W avg':'level 7', rounds: n===0?3:4},
+    })},
+  };
+
+  appState.workoutHistory = [];
+  let counter = 1;
+  for (let wk = 2; wk >= 0; wk--) {
+    ['mon','tue','thu','fri'].forEach(k => {
+      const ts = thisMonday - wk * 7 * day + dayIdx[k] * day;
+      if (ts >= now) return; // don't log a session for today or the future
+      const n = 2 - wk; // 0 = oldest occurrence, 2 = most recent
+      const tmpl = SESSION_TEMPLATES[k];
+      appState.workoutHistory.push({
+        id: 'm' + (counter++), ts, phase: 1, dayKey: k, dayName: dayNamesFull[k], focus: tmpl.focus,
+        sets: tmpl.build(n), totalSets: 13, vol: tmpl.vol + 150 * n,
+      });
+    });
+  }
 
   appState.foodLog = {
     [new Date().toDateString()]: [
@@ -1462,14 +1547,20 @@ function loadMockData() {
   ];
 
   appState.pbs = {
-    'Barbell Hip Thrust':    { w:82.5, r:10 },
-    'Romanian Deadlift':     { w:55,   r:10 },
-    'Squat':                 { w:55,   r:8  },
-    'Wide Grip Lat Pulldown': { w:45,   r:10 },
-    'Dumbbell Bench Press':  { w:17,   r:10 },
-    'Cable Glute Kickback':  { w:15,   r:12 },
-    'DB Bulgarian Split Squat': { w:14, r:10 },
-    'Pull Up':               { w:null, r:5  },
+    'Hip Thrust':             { w:55,   r:10 },
+    'Bulgarian Split Squat':  { w:12,   r:10 },
+    'Hip Abduction':          { w:32.5, r:12 },
+    'Back Extension':         { w:2.5,  r:12 },
+    'Incline Press':          { w:14,   r:9  },
+    'Lat Pulldown':           { w:37.5, r:9  },
+    'Seated Shoulder Press':  { w:10,   r:10 },
+    'Romanian Deadlift':      { w:45,   r:8  },
+    'Goblet Squat':           { w:18,   r:8  },
+    'Cable Kickback':         { w:10,   r:10 },
+    'Calf Raise':             { w:14,   r:15 },
+    'Flat Press':             { w:14,   r:9  },
+    'Seated Row':             { w:35,   r:10 },
+    'Lateral Raise':          { w:4,    r:15 },
   };
 
   // Load targets from DEFAULT_TARGETS constant in preview mode
@@ -1830,7 +1921,7 @@ function renderHome() {
   const nextSession = getNextSession(history, todayKey);
   renderSmartBanner(nextSession, history, todayKey);
 
-  const weeksIn = Math.max(1, Math.min(8, Math.ceil((Date.now() - appState.startDate) / (7 * 24 * 3600 * 1000))));
+  const weeksIn = Math.max(1, Math.min(26, Math.ceil((Date.now() - appState.startDate) / (7 * 24 * 3600 * 1000))));
   document.getElementById('stat-week').textContent = weeksIn;
   document.getElementById('stat-workouts').textContent = history.length;
   const weekAgo = Date.now() - 7 * 24 * 3600 * 1000;
@@ -1847,13 +1938,13 @@ function renderHomeProgress() {
   const history = appState.workoutHistory || [];
 
   const hipPb   = pbs['Hip Thrust'];
-  const pullPb  = pbs['Wide Grip Lat Pulldown'];
-  const benchPb = pbs['Dumbbell Bench Press'];
+  const pullPb  = pbs['Lat Pulldown'];
+  const benchPb = pbs['Flat Press'];
   const upperPb = pullPb || benchPb;
-  const upperName = pullPb ? 'Pull Down' : 'Bench';
+  const upperName = pullPb ? 'Pull Down' : 'Flat Press';
   const hipTarget = appState.targets?.['Hip Thrust']?.w;
 
-  const cardioSessions = history.filter(h => ['thu','tue','sun'].includes(h.dayKey)).length;
+  const cardioSessions = history.filter(h => Object.values(h.sets || {}).some(s => s?.machine)).length;
   const weeksTrained = appState.startDate
     ? Math.max(1, Math.ceil((Date.now() - appState.startDate) / (7 * 24 * 3600 * 1000)))
     : 1;
@@ -2137,6 +2228,7 @@ function renderProgram() {
               <div class="prog-ex-row">
                 <div class="prog-ex-info">
                   <div class="prog-ex-name">${ex.name}</div>
+                  ${ex.equipment ? `<div style="font-size:11px;color:var(--ink3);margin-top:2px;">${ex.equipment}</div>` : ''}
                   <div class="prog-ex-tags">
                     ${ex.key ? '<span class="chip chip-rose">Key lift</span>' : ''}
                     ${ex.changed ? '<span class="chip chip-sky">Updated</span>' : ''}
@@ -2167,108 +2259,39 @@ function toggleDayCard(k) {
    LOG
 ═══════════════════════════════════════════════════════ */
 function timedMode(ex) {
-  // Returns 'minutes' for cardio, 'seconds' for core/circuit, null for weighted
+  // Returns 'minutes' for cardio, 'seconds' for timed holds, null for weighted/reps
   if (ex.cardio || /min/i.test(ex.reps)) return 'minutes';
-  if (ex.type === 'Core' || ex.type.startsWith('Circuit') || /sec/i.test(ex.reps)) return 'seconds';
+  if (ex.type.startsWith('Circuit') || /sec/i.test(ex.reps)) return 'seconds';
   return null;
 }
+
+function isTimed(ex) { return timedMode(ex) !== null; }
 
 // Exercise targets — seeded into Supabase on first load, then read from there.
 // The DEFAULT_TARGETS constant is the source of truth used only for seeding.
 // At runtime getTarget() reads from appState.targets which is loaded from Supabase.
 const DEFAULT_TARGETS = [
-  // Current programme — key lifts
-  { exercise: "Hip Thrust",              target_weight: "90–95kg",        note: "+2.5kg every session. Mon, Wed and Sat — same weight, all three move up together." },
-  { exercise: "Squat",                   target_weight: "20kg (bar)",     note: "Barbell back squat — starting point for the simplified program. +2.5kg every session. Longer-term goal ~70–80kg." },
-  { exercise: "Barbell Overhead Press",  target_weight: "20kg (bar)",     note: "Starting point for the simplified program. Weight stays put until all 3 sets hit 12 clean reps, then +2.5kg." },
-  { exercise: "Deadlift",                target_weight: "20kg (bar)",     note: "Conventional deadlift — starting point for the simplified program. +2.5kg every session." },
-  { exercise: "Press Up",                target_weight: "bodyweight",     note: "One more rep every session." },
-  { exercise: "Leg Raises",              target_weight: "bodyweight",     note: "Lying leg raise. Slow, controlled, no lower-back arch. One more rep every session." },
-  { exercise: "Single Leg Dumbbell Hip Thrust", target_weight: "20–30kg", note: "Saturday unilateral key lift. Expect significantly less than bilateral — 20kg DB is a solid start, build to 30kg. +2kg when both legs are clean for 3×10." },
-  { exercise: "Wide Grip Lat Pulldown",  target_weight: "45–55kg",        note: "+2.5kg per session when all 4 sets are clean." },
-  { exercise: "Wide Grip Pull Down",     target_weight: "45–55kg",        note: "+2.5kg per session when all 4 sets are clean." },
-  { exercise: "Machine Hip Extension",           target_weight: "moderate",       note: "Full extension, squeeze and hold 1 sec. Add weight when 15 reps feels easy." },
-  { exercise: "Incline Treadmill Walk",          target_weight: "6.0–6.5 km/h",  note: "15% incline always. Speed is how you progress — aim to walk faster in zone 3 as fitness builds." },
-  // Barbell compounds
-  { exercise: "Barbell Hip Thrust",            target_weight: "70–90kg plates", note: "You're using a plate-loaded hip thrust machine — the lever arm means each kg loaded feels ~15–20% harder than barbell. 70–90kg on the machine = equivalent to 100–120kg barbell. Start where you are and add 5kg per week." },
-  { exercise: "Romanian Deadlift",             target_weight: "60–75kg",        note: "Should feel heavy with a deep hamstring stretch. 70kg is the goal." },
-  { exercise: "Barbell Romanian Deadlift",     target_weight: "60–75kg",        note: "Monday barbell RDL — hip hinge with barbell on floor. Deep hamstring stretch every rep. 70kg is the goal. +2.5kg when all 3 sets clean." },
-  { exercise: "Dumbbell Staggered Stance RDL", target_weight: "50–60kg",        note: "Wednesday dumbbell single-leg RDL — DBs in hand, rear foot slightly back. Expect less weight than barbell bilateral. +2kg when both legs clean." },
-  { exercise: "Barbell Lunge",                 target_weight: "30–40kg",        note: "Barbell on back. 40kg per leg is advanced level." },
-  { exercise: "Barbell Bent Over Row",         target_weight: "45–55kg",        note: "Strict form. 50kg for clean reps is very strong for women." },
-  { exercise: "Box Squat",                     target_weight: "60–70kg",        note: "Pause on box. Slightly less than free squat — 65kg is the target." },
-  // Dumbbell compounds
-  { exercise: "Dumbbell Bench Press",          target_weight: "20–24kg",        note: "20kg DBs per hand is advanced. Aim for 22kg by end of program." },
-  { exercise: "DB Bulgarian Split Squat",      target_weight: "16–20kg",        note: "20kg DBs per hand. This is where elite glute athletes live." },
-  { exercise: "DB Walking Lunge",              target_weight: "16–20kg",        note: "20kg DBs. Long stride, controlled tempo." },
-  { exercise: "DB Goblet Squat",               target_weight: "24–32kg",        note: "Single heavy DB. 28kg is a strong working weight." },
-  { exercise: "Dumbbell Step Up",              target_weight: "14–18kg",        note: "Drive through heel. 16kg DBs is the working target." },
-  { exercise: "DB Sumo Squat",                 target_weight: "24–32kg",        note: "Single heavy DB held vertically between legs, wide stance. +2kg when all 3 sets clean." },
-  { exercise: "Dumbbell Sumo Squat",           target_weight: "24–32kg",        note: "Single DB. Deep as possible — 28kg is the goal." },
-  { exercise: "One Arm DB Bent Over Row",      target_weight: "20–24kg",        note: "22kg per arm is advanced. Full range of motion." },
-  { exercise: "DB Rear Delt Fly",              target_weight: "8–10kg",         note: "Light is correct here. 10kg is strong for strict rear delts." },
-  { exercise: "Seated Arnold Press",           target_weight: "14–18kg",        note: "16kg DBs is a solid working weight with full rotation." },
-  { exercise: "Dumbbell Lateral Raise",        target_weight: "8–10kg",         note: "Strict form only. 10kg is the ceiling for clean laterals." },
-  { exercise: "Standing Alt DB Bicep Curl",    target_weight: "10–12kg",        note: "Full range, no swing. 12kg per hand is strong." },
-  { exercise: "EZ Bar Bicep Curl",             target_weight: "25–30kg",        note: "Including bar. 28kg total is a good working weight." },
-  { exercise: "Two Arm DB Tricep Extension",   target_weight: "14–16kg",        note: "Single DB overhead. 16kg is the working target." },
-  // Machine / cable
-  { exercise: "Wide Grip Pull Down",           target_weight: "45–55kg",        note: "Stack weight. 50kg for controlled 10 reps is advanced." },
-  { exercise: "Machine Row",                   target_weight: "45–55kg",        note: "Full retraction. 50kg stack is the target." },
-  { exercise: "Cable Face Pull",               target_weight: "15–20kg",        note: "Light cable. Form over load — 18kg is plenty." },
-  { exercise: "Cable Rope Straight Arm Pull Down", target_weight: "20–25kg",   note: "Feel lats the whole way. 22kg is a solid working weight." },
-  { exercise: "Cable High Row",                target_weight: "25–30kg",        note: "Elbows high. 27kg is the target." },
-  { exercise: "Cable Glute Kickback",          target_weight: "15–20kg",        note: "Feel every rep in the glute. 18kg cable is advanced." },
-  { exercise: "Cable V-Bar Tricep Extension",  target_weight: "25–30kg",        note: "Elbows fixed. 28kg for clean full extensions." },
-  { exercise: "Cable Crunch",                  target_weight: "35–45kg",        note: "Elite trained women do 35–45kg for 12 clean reps. Progress every session." },
-  { exercise: "Machine Chest Press",           target_weight: "40–50kg",        note: "Stack. Slow eccentric — 45kg is your target." },
-  { exercise: "Machine Hip Abduction",         target_weight: "15–25kg",        note: "Cable hip abduction — low pulley, ankle attachment. +2.5kg per session when form is solid." },
-  { exercise: "Cable Hip Abduction (Machine Hip Abduction)", target_weight: "15–25kg", note: "Low pulley, ankle attachment. Progressive load — start light, add weight every session when 3×15 is clean with controlled return." },
-  { exercise: "Cable Hip Extension (Machine Hip Extension)", target_weight: "moderate", note: "Single leg, slight forward lean. Feel the glute the whole way through. Add weight when form is solid." },
-  { exercise: "Curtsy Lunge",                  target_weight: "BW → 8–12kg",   note: "Bodyweight first to nail the cross-behind pattern. Add 8–12kg DBs once movement is clean." },
-  { exercise: "Lateral Band Walks",            target_weight: "band only",      note: "Band just above knees. Resistance band is the load — use a medium band and stay low the whole set." },
-  { exercise: "Side-Lying Hip Abduction (Plate)", target_weight: "5–10kg",     note: "Weight plate on outer thigh. Take each set close to failure. 10kg plate per leg is a strong working target." },
-  { exercise: "Machine Hip Adduction",         target_weight: "45–55kg",        note: "Inner thigh squeeze. 50kg stack is the target." },
-  { exercise: "Machine Fly",                   target_weight: "30–35kg",        note: "Feel the chest stretch. 32kg is the working target." },
-  { exercise: "Machine Rear Delt Fly",         target_weight: "20–25kg",        note: "Arms nearly straight. 22kg is correct weight." },
-  { exercise: "Seated Leg Curl",               target_weight: "35–45kg",        note: "Full stretch at top. Slow down — 40kg is the target." },
-  { exercise: "Leg Press",                     target_weight: "100–130kg",      note: "Full depth. 120kg is achievable for advanced glute athletes." },
-  { exercise: "Reverse Close Grip Cable Pulldown", target_weight: "35–45kg",   note: "Palms facing in. 40kg is strong for this grip." },
-  // Other
-  { exercise: "Pull Up",                       target_weight: "bodyweight",     note: "Bodyweight first. Elite women add 10kg+ via belt." },
-  { exercise: "Hyperextension",                target_weight: "30–40kg",        note: "Barbell good morning substitute. Bar across upper back, hinge at hips, squeeze glutes to return. +2.5kg when form is solid." },
-  { exercise: "Banded Glute Bridge",           target_weight: "band only",      note: "Band tension is the load. Push knees out against the band hard." },
-  { exercise: "Hip Thrust Pulse",              target_weight: "same bar",       note: "Use same barbell as the main hip thrust set." },
-  { exercise: "Staggered Stance RDL",          target_weight: "50–60kg",        note: "DBs in hand, rear foot slightly back. +2kg per session when both legs clean." },
-  { exercise: "Dumbbell Romanian Deadlift",    target_weight: "24–32kg",        note: "Per dumbbell. Hip hinge with DBs, full hamstring stretch. +2kg when all sets clean." },
-  { exercise: "RDL — Staggered Stance",        target_weight: "50–60kg",        note: "Single leg emphasis — expect less than bilateral RDL." },
-  { exercise: "Weighted Crunch",               target_weight: "10–15kg",        note: "Plate at chest. 12kg is strong for weighted crunches." },
-  { exercise: "Chair Leg Raise",               target_weight: "bodyweight",     note: "Add ankle weights (2–4kg) once bodyweight feels easy." },
-  // Core / definition
-  { exercise: "Pallof Press",                  target_weight: "20–25kg",        note: "Anti-rotation — build to 25kg for 12 reps each side. Definition without width." },
-  { exercise: "Hollow Body Hold",              target_weight: "35 sec",         note: "Advanced target: 35 sec with legs at 20° from floor. Gymnastic standard." },
-  { exercise: "Stomach Vacuum",                target_weight: "60 sec",         note: "Target: 60 sec held with shallow nasal breathing. Takes 4–6 weeks to reach." },
-  { exercise: "Dead Bug — Breathing",          target_weight: "60 sec",         note: "60 sec unbroken with exhale-vacuum before every rep. This is the advanced target." },
-  // Cardio
-  { exercise: "Stairmaster",                   target_weight: "level 6–8",      note: "Maintain a pace you can hold for the full duration without holding the rails. Level 6–8 is the target for 15–25 min steady state." },
-  { exercise: "Treadmill Power Walk",          target_weight: "5.5–6.5 km/h @ incline 8–10%", note: "Incline 8–10%, hands completely off rails. A pace where you're working but can hold it the full duration." },
-  // Timed / core / circuit
-  { exercise: "Plank",                         target_weight: "90–120 sec",     note: "Advanced women hold 2 min+ with perfect form. 90 sec is strong." },
-  { exercise: "Hip Raise Plank",               target_weight: "60–90 sec",      note: "Harder than a static plank. 60 sec controlled is elite level." },
-  { exercise: "Dead Bug",                      target_weight: "60 sec",         note: "Slow and controlled — 60 sec without rest or form break is the target." },
-  { exercise: "Bicycle Twisting",              target_weight: "60 sec",         note: "Slow tempo. Elite core athletes do 60 sec with zero momentum." },
-  { exercise: "Heel Drops",                    target_weight: "60 sec",         note: "Lower back glued down the whole time. 60 sec is the goal." },
-  { exercise: "Straight Leg Dead Bug",         target_weight: "60 sec",         note: "Harder than bent-knee. 60 sec unbroken is advanced." },
-  { exercise: "Reverse Crunch",                target_weight: "60 sec",         note: "Hips lifting off floor every rep. 60 sec quality reps is elite." },
-  { exercise: "Reverse Knee Drive",            target_weight: "45 sec",         note: "Core tight throughout. 45 sec unbroken with control is the target." },
-  { exercise: "Bird Dog",                      target_weight: "60 sec",         note: "Hips perfectly square. 60 sec without wobble is advanced." },
-  { exercise: "Toe Taps",                      target_weight: "45 sec",         note: "Controlled pace. 45 sec without lower back lifting is the goal." },
-  { exercise: "Rotating Mountain Climber",     target_weight: "60 sec",         note: "Hip rotation is the key. 60 sec continuous is advanced." },
-  { exercise: "Flutter Kicks",                 target_weight: "60 sec",         note: "Legs 6 inches off ground the whole set. 60 sec is elite." },
-  { exercise: "Legs On Bench Crunch",          target_weight: "60 sec",         note: "Quality crunches only. 60 sec of clean reps is the target." },
-  { exercise: "Seated Leg Tucks",              target_weight: "60 sec",         note: "Controlled full extension. 60 sec is a strong working set." },
-  { exercise: "Alt Lying Heel Touches",        target_weight: "40 reps",        note: "Lower back flat throughout. 40 reps unbroken is advanced." },
-  { exercise: "Cable Pull-Through",            target_weight: "25–35kg",        note: "Face away from cable, hinge at hips. 30kg is a strong working weight." },
+  // Day 1 — Lower A
+  { exercise: "Hip Thrust",            target_weight: "105kg",        note: "Start 50kg. First lift of the day — add weight every session. 6-month target ~105kg." },
+  { exercise: "Bulgarian Split Squat", target_weight: "20kg/DB",      note: "Start 10kg/DB. Add weight once all 3 sets hit 10 clean reps per leg. 6-month target ~20kg/DB." },
+  { exercise: "Hip Abduction",         target_weight: "60kg",         note: "Start 30kg. Add weight once all 3 sets hit 15 clean reps. 6-month target ~60kg." },
+  { exercise: "Back Extension",        target_weight: "17.5kg held",  note: "Start bodyweight (0kg). Add a held plate once all 3 sets hit 12 clean reps. 6-month target ~17.5kg held." },
+  // Day 2 — Upper A
+  { exercise: "Incline Press",          target_weight: "18.5kg/DB",   note: "Start 10kg/DB. First lift of the day — add weight every session. 6-month target ~18.5kg/DB." },
+  { exercise: "Lat Pulldown",           target_weight: "52.5kg",      note: "Start 35kg. Add weight once all 3 sets hit 10 clean reps. 6-month target ~52.5kg." },
+  { exercise: "Seated Shoulder Press",  target_weight: "14kg/DB",     note: "Start 8kg/DB. Add weight once all 3 sets hit 10 clean reps. 6-month target ~14kg/DB." },
+  { exercise: "Dead Bug",               target_weight: "12/side, 3s tempo", note: "Start 10/side. One more rep per side every session — 6-month target 12/side at a 3-second tempo." },
+  // Day 3 — Lower B
+  { exercise: "Romanian Deadlift", target_weight: "75kg",  note: "Start 40kg. First lift of the day — add weight every session. 6-month target ~75kg." },
+  { exercise: "Goblet Squat",      target_weight: "30kg",  note: "Start 16kg. Add weight once all 3 sets hit 10 clean reps. 6-month target ~30kg." },
+  { exercise: "Cable Kickback",    target_weight: "16kg",  note: "Start 7.5kg. Add weight once all 3 sets hit 12 clean reps per leg. 6-month target ~16kg." },
+  { exercise: "Calf Raise",        target_weight: "22kg/DB", note: "Start 12kg/DB. Add weight once all 3 sets hit 15 clean reps. 6-month target ~22kg/DB." },
+  // Day 4 — Upper B (+ intervals)
+  { exercise: "Flat Press",        target_weight: "20kg/DB", note: "Start 12kg/DB. First lift of the day — add weight every session. 6-month target ~20kg/DB." },
+  { exercise: "Seated Row",        target_weight: "52.5kg",  note: "Start 35kg. Add weight once all 3 sets hit 10 clean reps. 6-month target ~52.5kg." },
+  { exercise: "Lateral Raise",     target_weight: "9kg/DB",  note: "Start 4kg/DB. Add weight once all 3 sets hit 15 clean reps. 6-month target ~9kg/DB." },
+  { exercise: "Hollow Body Hold",  target_weight: "50 sec",  note: "Start 20 sec per hold, best of 3. Breathe normally throughout. 6-month target ~50 sec." },
+  { exercise: "Intervals — 4×4",   target_weight: "+15–20% output", note: "4 rounds of 4 min hard / 3 min easy on bike, stairmaster, or incline treadmill. Beat last session's output at the same machine and round count." },
 ];
 
 function getTarget(name) {
@@ -2375,7 +2398,7 @@ function renderLog() {
         <div class="ex-log-hd ${all ? 'ex-log-hd-done' : ''}" onclick="toggleExLog(${i})">
           <div>
             <div class="ex-log-title">${ex.name} <span class="chip" style="background:var(--sky-bg);color:var(--sky-dk);font-size:10px;padding:2px 7px;border-radius:50px;">Custom</span></div>
-            <div class="ex-log-sub">${ex.type} · ${logSets[i].length} sets · ${ex.reps}</div>
+            <div class="ex-log-sub">${ex.equipment || ex.type} · ${logSets[i].length} sets · ${ex.reps}</div>
           </div>
           <div class="ex-progress-badge ${all ? 'complete' : ''}" id="badge-${i}">${done}/${logSets[i].length}</div>
         </div>
@@ -2459,6 +2482,7 @@ function renderLog() {
 
   list.innerHTML = warmupHtml + cardioPickerHtml + day.exercises.map((ex, i) => {
     if (day.cardioOnly && i !== cardioPickIdx) return '';
+    if (ex.interval) return renderIntervalCard(i, ex, history);
     const lastSessionSets = findLastSession(ex.name);
     const prev = lastSessionSets
       ? lastSessionSets.reduce((best, s) => (!best || parseFloat(s.w) > parseFloat(best.w)) ? s : best, null)
@@ -2522,7 +2546,7 @@ function renderLog() {
         <div class="ex-log-hd ${all ? 'ex-log-hd-done' : ''}" onclick="toggleExLog(${i})">
           <div>
             <div class="ex-log-title">${ex.name} ${ex.key ? '<span class="chip chip-rose" style="font-size:10px;padding:2px 7px;">Key</span>' : ''}</div>
-            <div class="ex-log-sub">${ex.type} · ${logSets[i].length} sets · ${ex.reps}</div>
+            <div class="ex-log-sub">${ex.equipment || ex.type} · ${logSets[i].length} sets · ${ex.reps}</div>
           </div>
           <div class="ex-progress-badge ${all ? 'complete' : ''}" id="badge-${i}">${done}/${logSets[i].length}</div>
         </div>
@@ -2684,6 +2708,63 @@ function removeSet(ei) {
   renderLog();
 }
 
+/* ── Interval finisher (4×4) ───────────────────────────── */
+const INTERVAL_MACHINES = [
+  { id: 'bike', label: 'Bike' },
+  { id: 'stairs', label: 'Stairmaster' },
+  { id: 'treadmill', label: 'Incline Treadmill' },
+];
+
+function findPrevInterval(history) {
+  for (let i = history.length - 1; i >= 0; i--) {
+    const entry = Object.values(history[i].sets || {}).find(s => s?.machine);
+    if (entry) return entry;
+  }
+  return null;
+}
+
+function setIntervalField(ei, field, val) {
+  if (!logSets[ei] || !logSets[ei][0]) return;
+  logSets[ei][0][field] = val;
+  scheduleAutoSave();
+  renderLog();
+}
+
+function renderIntervalCard(i, ex, history) {
+  if (!logSets[i] || !logSets[i][0] || logSets[i][0].machine === undefined) {
+    logSets[i] = [{ name: ex.name, machine: 'bike', output: '', rounds: 0 }];
+  }
+  const st = logSets[i][0];
+  const prev = findPrevInterval(history);
+
+  return `
+    <div class="ex-log-card">
+      <div class="ex-log-hd">
+        <div>
+          <div class="ex-log-title">${ex.name}</div>
+          <div class="ex-log-sub">4 rounds · 4 min hard / 3 min easy</div>
+        </div>
+      </div>
+      <div class="ex-log-body" style="display:block;">
+        <div class="coaching-tip">${ex.note}</div>
+        <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px;">
+          ${INTERVAL_MACHINES.map(m => `<button onclick="setIntervalField(${i},'machine','${m.id}')" style="padding:8px 14px;border-radius:var(--r-pill);font-size:12.5px;font-weight:${st.machine===m.id?'600':'500'};border:1.5px solid ${st.machine===m.id?'var(--sky-dk)':'var(--border)'};background:${st.machine===m.id?'var(--sky-dk)':'#fff'};color:${st.machine===m.id?'#fff':'var(--ink2)'};cursor:pointer;">${m.label}</button>`).join('')}
+        </div>
+        <div style="margin-bottom:14px;">
+          <div class="set-col-hd" style="text-align:left;margin-bottom:6px;">Output — avg watts / level / speed+incline</div>
+          <input class="set-inp" style="width:100%;text-align:left;padding:10px 12px;box-sizing:border-box;" type="text" placeholder="e.g. 220W avg, level 8, 8.0 @ 3%" value="${st.output || ''}" onchange="setIntervalField(${i},'output',this.value)">
+        </div>
+        <div>
+          <div class="set-col-hd" style="text-align:left;margin-bottom:6px;">Rounds completed</div>
+          <div style="display:flex;gap:7px;">
+            ${[0,1,2,3,4].map(n => `<button onclick="setIntervalField(${i},'rounds',${n})" style="flex:1;padding:10px;border-radius:var(--r-xs);font-family:'DM Mono',monospace;font-weight:600;border:1.5px solid ${st.rounds===n?'var(--sky-dk)':'var(--border)'};background:${st.rounds===n?'var(--sky-dk)':'#fff'};color:${st.rounds===n?'#fff':'var(--ink2)'};cursor:pointer;">${n}</button>`).join('')}
+          </div>
+        </div>
+        ${prev ? `<div class="prev-best">Last session: ${prev.output || '—'} on ${INTERVAL_MACHINES.find(m=>m.id===prev.machine)?.label || prev.machine || '—'} · ${prev.rounds ?? '—'}/4 rounds</div>` : ''}
+      </div>
+    </div>`;
+}
+
 function findPrev(history, name) {
   let best = null;
   for (let i = history.length - 1; i >= 0; i--) {
@@ -2716,6 +2797,14 @@ async function finishWorkout() {
   let totalSets = 0, totalReps = 0, totalVol = 0;
   const sets = {};
   allExercises.forEach((ex, i) => {
+    if (ex.interval) {
+      const st = (logSets[i] || [])[0];
+      if (st && (st.output || st.rounds > 0)) {
+        totalSets++;
+        sets[`${i}_0`] = { name: ex.name, machine: st.machine, output: st.output, rounds: st.rounds };
+      }
+      return;
+    }
     const timed = timedMode(ex) !== null;
     (logSets[i] || []).forEach((set, si) => {
       if (set.done || set.w || set.r) {
@@ -2732,7 +2821,7 @@ async function finishWorkout() {
   });
 
   // Total possible sets in this session (uses the actual, possibly edited, set count per exercise)
-  const totalPossible = allExercises.reduce((n, ex, i) => n + (logSets[i]?.length || ex.sets || 1), 0);
+  const totalPossible = allExercises.reduce((n, ex, i) => n + (ex.interval ? 1 : (logSets[i]?.length || ex.sets || 1)), 0);
   const completionPct = totalPossible > 0 ? Math.round((totalSets / totalPossible) * 100) : 100;
 
   let entry = {
@@ -2823,6 +2912,14 @@ async function finishWorkout() {
 
   // Exercise breakdown — one row per exercise with all sets
   const summaryLines = allExercises.map((ex, i) => {
+    if (ex.interval) {
+      const st = (logSets[i] || [])[0];
+      if (!st || (!st.output && !(st.rounds > 0))) return null;
+      return `<div style="padding-bottom:8px;border-bottom:1px solid var(--border);">
+        <div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:5px;">${ex.name}</div>
+        <div style="font-size:12px;color:var(--ink2);">${st.output || '—'} on ${st.machine || '—'} · ${st.rounds ?? '—'}/4 rounds</div>
+      </div>`;
+    }
     const doneSets = (logSets[i] || []).filter(s => s.done || s.w || s.r);
     if (!doneSets.length) return null;
     const timed = isTimed(ex);
@@ -3048,6 +3145,11 @@ function renderLiveNutritionUnavailable() {
    NUTRITION
 ═══════════════════════════════════════════════════════ */
 function renderNutrition() {
+  // The food-diary UI (food-log / meal-plan-list / supp-list / n-* tally) was removed from the
+  // page markup in an earlier redesign; this guards the leftover logic so it no-ops instead of
+  // throwing and silently killing the rest of the Nutrition page render.
+  if (!document.getElementById('food-log')) { nutSwitch('train'); return; }
+
   const todayKey = new Date().toDateString();
   const log = (appState.foodLog || {})[todayKey] || [];
   const tot = log.reduce((a, f) => ({ kcal: a.kcal + f.kcal, p: a.p + f.p, c: a.c + f.c, f: a.f + f.f }), { kcal: 0, p: 0, c: 0, f: 0 });
@@ -3279,7 +3381,7 @@ function emailMonthSummary() {
         byEx[set.name].push(set);
       });
       Object.entries(byEx).forEach(([name, sets]) => {
-        const detail = sets.map(s => s.w ? `${s.w}kg×${s.r}` : s.r ? `${s.r}s` : '—').join(', ');
+        const detail = sets.map(s => s.w ? `${s.w}kg×${s.r}` : s.r ? `${s.r}s` : s.machine ? `${s.output || '—'} · ${s.rounds ?? '—'}/4 rounds` : '—').join(', ');
         lines.push(`   • ${name}: ${detail}`);
       });
     }
@@ -3327,11 +3429,18 @@ function emailSummary() {
   if (!lastFinishedEntry) return;
   const { entry, day, logSetsSnapshot } = lastFinishedEntry;
   const dateStr = new Date(entry.ts).toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
-  const totalWeeks = Math.max(1, Math.min(8, Math.ceil((Date.now() - appState.startDate) / (7*24*3600*1000))));
+  const totalWeeks = Math.max(1, Math.min(26, Math.ceil((Date.now() - appState.startDate) / (7*24*3600*1000))));
 
   // Build exercise lines
   const exLines = [];
   day.exercises.forEach((ex, i) => {
+    if (ex.interval) {
+      const st = (logSetsSnapshot[i] || [])[0];
+      if (st && (st.output || st.rounds > 0)) {
+        exLines.push(`  • ${ex.name}: ${st.output || '?'} on ${st.machine || '?'} · ${st.rounds ?? '?'}/4 rounds`);
+      }
+      return;
+    }
     const sets = (logSetsSnapshot[i] || []).filter(s => s.done || s.w || s.r);
     if (!sets.length) return;
     const timed = isTimed(ex);
@@ -3354,7 +3463,7 @@ function emailSummary() {
   });
 
   // Top PBs overall
-  const KEY_LIFTS = ['Hip Thrust','Romanian Deadlift','Squat','DB Bulgarian Split Squat','Wide Grip Pull Down','Dumbbell Bench Press'];
+  const KEY_LIFTS = ['Hip Thrust','Bulgarian Split Squat','Incline Press','Lat Pulldown','Romanian Deadlift','Goblet Squat','Flat Press','Seated Row'];
   const pbSummary = KEY_LIFTS
     .filter(l => appState.pbs[l])
     .map(l => `  • ${l}: ${appState.pbs[l].w}kg × ${appState.pbs[l].r} reps`)
@@ -3482,7 +3591,7 @@ function buildFullHistoryText() {
   const lastDate  = new Date(history[history.length - 1].ts).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
   const totalWeeks = Math.max(1, Math.ceil((Date.now() - appState.startDate) / (7 * 24 * 3600 * 1000)));
 
-  const KEY_LIFTS = ['Hip Thrust','Romanian Deadlift','Squat','DB Bulgarian Split Squat','Wide Grip Lat Pulldown','Dumbbell Bench Press','Seated Arnold Press','Cable Glute Kickback','Staggered Stance RDL'];
+  const KEY_LIFTS = ['Hip Thrust','Bulgarian Split Squat','Hip Abduction','Back Extension','Incline Press','Lat Pulldown','Seated Shoulder Press','Romanian Deadlift','Goblet Squat','Cable Kickback','Calf Raise','Flat Press','Seated Row','Lateral Raise'];
   const pbLines = KEY_LIFTS.map(l => {
     const pb  = pbs[l];
     const tgt = appState.targets[l];
@@ -3503,7 +3612,7 @@ function buildFullHistoryText() {
         byEx[set.name].push(set);
       });
       Object.entries(byEx).forEach(([name, sets]) => {
-        const detail = sets.map(s => s.w ? `${s.w}kg×${s.r}` : s.r ? `${s.r}s` : '—').join(', ');
+        const detail = sets.map(s => s.w ? `${s.w}kg×${s.r}` : s.r ? `${s.r}s` : s.machine ? `${s.output || '—'} · ${s.rounds ?? '—'}/4 rounds` : '—').join(', ');
         const tgt = appState.targets[name];
         const tgtNote = tgt ? ` [target: ${tgt.w}]` : '';
         lines.push(`  • ${name}: ${detail}${tgtNote}`);
@@ -3516,7 +3625,7 @@ function buildFullHistoryText() {
 ${'─'.repeat(50)}
 Programme start:    ${firstDate}
 Last session:       ${lastDate}
-Week:               ${totalWeeks} of 8
+Week:               ${totalWeeks} of 26
 Total sessions:     ${history.length}
 Total sets:         ${totalSets}
 Total volume:       ${Math.round(totalVol).toLocaleString()}kg
@@ -3572,7 +3681,7 @@ function emailFullHistory() {
   const totalWeeks = Math.max(1, Math.ceil((Date.now() - appState.startDate) / (7 * 24 * 3600 * 1000)));
 
   // Personal bests with targets
-  const KEY_LIFTS = ['Hip Thrust','Romanian Deadlift','Squat','DB Bulgarian Split Squat','Wide Grip Lat Pulldown','Dumbbell Bench Press','Seated Arnold Press','Cable Glute Kickback','Staggered Stance RDL'];
+  const KEY_LIFTS = ['Hip Thrust','Bulgarian Split Squat','Hip Abduction','Back Extension','Incline Press','Lat Pulldown','Seated Shoulder Press','Romanian Deadlift','Goblet Squat','Cable Kickback','Calf Raise','Flat Press','Seated Row','Lateral Raise'];
   const pbLines = KEY_LIFTS.map(l => {
     const pb  = pbs[l];
     const tgt = appState.targets[l];
@@ -3594,7 +3703,7 @@ function emailFullHistory() {
         byEx[set.name].push(set);
       });
       Object.entries(byEx).forEach(([name, sets]) => {
-        const detail = sets.map(s => s.w ? `${s.w}kg×${s.r}` : s.r ? `${s.r}s` : '—').join(', ');
+        const detail = sets.map(s => s.w ? `${s.w}kg×${s.r}` : s.r ? `${s.r}s` : s.machine ? `${s.output || '—'} · ${s.rounds ?? '—'}/4 rounds` : '—').join(', ');
         const tgt = appState.targets[name];
         const tgtNote = tgt ? ` [target: ${tgt.w}]` : '';
         lines.push(`  • ${name}: ${detail}${tgtNote}`);
@@ -3613,7 +3722,7 @@ OVERVIEW
 ${'─'.repeat(50)}
 Programme start:    ${firstDate}
 Last session:       ${lastDate}
-Week:               ${totalWeeks} of 8
+Week:               ${totalWeeks} of 26
 Total sessions:     ${history.length}
 Total sets:         ${totalSets}
 Total volume:       ${Math.round(totalVol).toLocaleString()}kg
@@ -3890,9 +3999,10 @@ function renderVolumeChart() {
   if (volumeChartMode === 'focus') {
     const days = [
       { k: 'all', n: 'All days' },
-      { k: 'mon', n: 'Mon — Full Body' },
-      { k: 'wed', n: 'Wed — Full Body' },
-      { k: 'sat', n: 'Sat — Full Body' },
+      { k: 'mon', n: 'Mon — Lower A' },
+      { k: 'tue', n: 'Tue — Upper A' },
+      { k: 'thu', n: 'Thu — Lower B' },
+      { k: 'fri', n: 'Fri — Upper B' },
     ];
     if (focusRow) {
       focusRow.style.display = 'flex';
@@ -4072,7 +4182,7 @@ function renderProgress() {
   renderVolumeChart();
 
   // ── Personal Bests ──────────────────────────────────
-  const KEY_LIFTS = ['Hip Thrust','Barbell Romanian Deadlift','Squat','DB Bulgarian Split Squat','Wide Grip Lat Pulldown','Dumbbell Bench Press','Seated Arnold Press','Cable Glute Kickback','Dumbbell Staggered Stance RDL'];
+  const KEY_LIFTS = ['Hip Thrust','Bulgarian Split Squat','Incline Press','Lat Pulldown','Romanian Deadlift','Goblet Squat','Flat Press','Seated Row'];
   const pbs = appState.pbs || {};
   document.getElementById('pb-grid').innerHTML = KEY_LIFTS.map(l => {
     const tgt = getTarget(l);
@@ -4114,7 +4224,7 @@ function renderProgress() {
         byEx[s.name].push(s);
       });
       Object.entries(byEx).forEach(([name, sets]) => {
-        const detail = sets.map(s => s.w ? `${s.w}kg×${s.r}` : s.r ? `${s.r}s` : '—').join(', ');
+        const detail = sets.map(s => s.w ? `${s.w}kg×${s.r}` : s.r ? `${s.r}s` : s.machine ? `${s.output || '—'} · ${s.rounds ?? '—'}/4 rounds` : '—').join(', ');
         exRows += `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px;">
           <span style="color:var(--ink2);">${name}</span>
           <span style="font-family:'DM Mono',monospace;color:var(--ink3);font-size:11px;">${detail}</span>
@@ -4630,6 +4740,7 @@ window.tickSet = tickSet;
 window.updSet = updSet;
 window.addSet = addSet;
 window.removeSet = removeSet;
+window.setIntervalField = setIntervalField;
 window.finishWorkout = finishWorkout;
 window.closeModal = closeModal;
 window.skipRest = skipRest;
