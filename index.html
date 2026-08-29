@@ -347,9 +347,11 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
   font-size:10px; font-weight:700; letter-spacing:0.6px; text-transform:uppercase;
   background:var(--paper2); color:var(--ink3);
 }
-.day-pill.today-pill { background:var(--rose-mid); color:var(--rose-dk); }
-.day-pill.done-pill  { background:var(--sage-mid); color:var(--sage-dk); }
-.day-pill.rest-pill  { background:var(--mauve);    color:var(--mauve-dk); }
+.day-pill.today-pill  { background:var(--rose-mid); color:var(--rose-dk); }
+.day-pill.done-pill   { background:var(--sage-mid); color:var(--sage-dk); }
+.day-pill.rest-pill   { background:var(--mauve);    color:var(--mauve-dk); }
+.day-pill.due-pill    { background:var(--sky-mid);  color:var(--sky-dk); }
+.day-pill.missed-pill { background:var(--mauve);    color:var(--mauve-dk); }
 .day-card-hd .dname  { font-size:15px; font-weight:600; letter-spacing:-0.1px; color:var(--charcoal); }
 .day-card-hd .dfocus { font-size:12px; color:var(--ink3); margin-top:2px; }
 .day-card-hd .dchev  { margin-left:auto; color:var(--ink3); transition:transform 0.22s; flex-shrink:0; }
@@ -434,14 +436,16 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
   cursor:pointer; transition:all 0.15s; color:transparent;
 }
 .set-check.done { background:var(--sage-mid); border-color:var(--sage-dk); color:var(--sage-dk); }
-.add-set-btn {
-  width:100%; padding:9px; background:none;
+.set-count-row { display:flex; gap:8px; margin-top:6px; }
+.add-set-btn, .remove-set-btn {
+  flex:1; padding:9px; background:none;
   border:1px dashed var(--border2); border-radius:var(--r-xs);
   color:var(--ink3); font-size:12px; font-weight:500; cursor:pointer;
   display:flex; align-items:center; justify-content:center; gap:6px;
-  margin-top:6px; transition:all 0.15s;
+  transition:all 0.15s;
 }
-.add-set-btn:active { border-color:var(--charcoal); color:var(--charcoal); }
+.add-set-btn:active, .remove-set-btn:active { border-color:var(--charcoal); color:var(--charcoal); }
+.remove-set-btn:disabled { opacity:0.4; cursor:not-allowed; }
 .prev-best { font-family:'DM Mono', monospace; font-size:11px; color:var(--ink3); margin-top:8px; padding-top:8px; border-top:1px solid var(--border); }
 
 /* ── REST TIMER — highly visible ─────────────────────────────────── */
@@ -1369,6 +1373,8 @@ function fullBodyDay(name) {
 
 const REST_DAY = { name:"Rest", focus:"Rest & Recovery", isRest:true, warmup:[], exercises:[] };
 
+const CUSTOM_DAY = { name:"Custom", focus:"Your own session", warmup:[], exercises:[] };
+
 const PROGRAM = {
   1: {
     mon: fullBodyDay("Monday"),
@@ -1378,6 +1384,7 @@ const PROGRAM = {
     fri: { ...REST_DAY, name:"Friday" },
     sat: fullBodyDay("Saturday"),
     sun: { ...REST_DAY, name:"Sunday" },
+    custom: CUSTOM_DAY,
   }
 };
 
@@ -2090,14 +2097,16 @@ function renderCardioBlock(ex) {
 
 function renderProgram() {
   const history = appState.workoutHistory;
-  const todayKey = ['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
+  const now = new Date();
+  const todayKey = ['sun','mon','tue','wed','thu','fri','sat'][now.getDay()];
+  const todayIdx = PROG_VIEW_KEYS.indexOf(todayKey); // 0=Mon .. 6=Sun
+  const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - todayIdx);
+
   const list = document.getElementById('prog-days');
-  list.innerHTML = PROG_VIEW_KEYS.map(k => {
+  list.innerHTML = PROG_VIEW_KEYS.map((k, idx) => {
     const day = PROGRAM[progPhase][k];
     const isToday = k === todayKey;
     const isRest = !!day.isRest;
-    const done = !isRest && history.some(h => h.dayKey === k && h.phase === progPhase);
-    const pillClass = isRest ? 'rest-pill' : done ? 'done-pill' : 'today-pill';
 
     if (isRest) {
       return `
@@ -2110,8 +2119,26 @@ function renderProgram() {
         </div>`;
     }
 
+    // This day's actual calendar date in the current week, to judge due/today/missed/completed.
+    const dayDate = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + idx);
+    const done = history.some(h => {
+      const dt = new Date(h.ts);
+      return dt.getFullYear() === dayDate.getFullYear() &&
+             dt.getMonth() === dayDate.getMonth() &&
+             dt.getDate() === dayDate.getDate() &&
+             h.dayKey === k;
+    });
+
+    let status;
+    if (done) status = 'done';
+    else if (idx < todayIdx) status = 'missed';
+    else if (idx === todayIdx) status = 'today';
+    else status = 'due';
+
+    const pillClass = { done:'done-pill', missed:'missed-pill', today:'today-pill', due:'due-pill' }[status];
+    const cardBorderColor = { done:'var(--sage)', missed:'var(--border2)', today:'var(--rose)', due:'var(--sky)' }[status];
+
     const cardioOnly = !!day.cardioOnly;
-    const cardBorderColor = done ? 'var(--sage)' : 'var(--rose)';
     const cardBorderWidth = isToday ? '2px' : '1px';
 
     return `
@@ -2307,10 +2334,12 @@ function getTarget(name) {
 
 function renderLogSelectors() {
   const todayKey = ['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
-  document.getElementById('log-day-sel').innerHTML = DAY_KEYS.map(k => {
+  const dayChips = DAY_KEYS.map(k => {
     const isToday = k === todayKey;
     return `<div class="sel-chip ${logDay === k ? 'active' : ''}" onclick="setLogDay('${k}')" style="${isToday && logDay !== k ? 'border-color:var(--rose-dk);color:var(--rose-dk);' : ''}">${PROGRAM[logPhase][k].name.slice(0, 3)}${isToday ? ' ·' : ''}</div>`;
   }).join('');
+  const customChip = `<div class="sel-chip ${logDay === 'custom' ? 'active' : ''}" onclick="setLogDay('custom')">Custom</div>`;
+  document.getElementById('log-day-sel').innerHTML = dayChips + customChip;
 }
 
 function setLogPhase(p) { logPhase = p; logSets = {}; warmupState = {}; cardioPickIdx = 0; customExercises = []; showAddExForm = false; renderLog(); }
@@ -2392,7 +2421,7 @@ function renderLog() {
       logSets[i] = Array.from({ length: ex.sets }, () => ({ w: '', r: '', done: false }));
     }
     const done = logSets[i].filter(s => s.done).length;
-    const all = done === ex.sets;
+    const all = done === logSets[i].length;
     const timed = timedMode(ex);
     const isTimedEx = timed !== null;
     const restLabel = ex.cardio ? '' : `Rest between sets: ${ex.rest}s`;
@@ -2403,9 +2432,9 @@ function renderLog() {
         <div class="ex-log-hd ${all ? 'ex-log-hd-done' : ''}" onclick="toggleExLog(${i})">
           <div>
             <div class="ex-log-title">${ex.name} <span class="chip" style="background:var(--sky-bg);color:var(--sky-dk);font-size:10px;padding:2px 7px;border-radius:50px;">Custom</span></div>
-            <div class="ex-log-sub">${ex.type} · ${ex.sets} sets · ${ex.reps}</div>
+            <div class="ex-log-sub">${ex.type} · ${logSets[i].length} sets · ${ex.reps}</div>
           </div>
-          <div class="ex-progress-badge ${all ? 'complete' : ''}" id="badge-${i}">${done}/${ex.sets}</div>
+          <div class="ex-progress-badge ${all ? 'complete' : ''}" id="badge-${i}">${done}/${logSets[i].length}</div>
         </div>
         <div class="ex-log-body" id="exbody-${i}" style="display:block;">
           ${restLabel ? `<div style="margin:0 0 12px;"><span style="display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:5px;background:#fdf0e8;color:#b86020;font-size:11.5px;font-weight:600;">
@@ -2438,10 +2467,16 @@ function renderLog() {
               </div>
             </div>`).join('')}
           ${prev ? `<div class="prev-best">${isTimedEx ? `Last session: ${prev.r} ${timed === 'minutes' ? 'min' : 'sec'}` : (prev.w ? `Last session: ${prev.w}kg × ${prev.r} reps` : `Last session: ${prev.r} reps`)}</div>` : ''}
-          <button class="add-set-btn" onclick="addSet(${i})">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Add set
-          </button>
+          <div class="set-count-row">
+            <button class="remove-set-btn" onclick="removeSet(${i})" ${logSets[i].length <= 1 ? 'disabled' : ''}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Remove set
+            </button>
+            <button class="add-set-btn" onclick="addSet(${i})">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add set
+            </button>
+          </div>
         </div>
       </div>`;
   }).join('');
@@ -2472,9 +2507,9 @@ function renderLog() {
         </div>
       </div>
     </div>` : `
-    <div style="padding:4px 0 16px;">
-      <button onclick="showAddExFormFn()" style="width:100%;padding:12px;border-radius:var(--r-sm);border:1.5px dashed var(--border);background:transparent;color:var(--ink3);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    <div style="margin:4px 16px 16px;display:flex;justify-content:center;">
+      <button onclick="showAddExFormFn()" style="padding:10px 18px;border-radius:var(--r-pill);border:1.5px dashed var(--border);background:transparent;color:var(--ink3);font-size:12.5px;font-weight:500;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:7px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Add custom exercise
       </button>
     </div>`;
@@ -2489,7 +2524,7 @@ function renderLog() {
       logSets[i] = Array.from({ length: ex.sets }, () => ({ w: '', r: '', done: false }));
     }
     const done = logSets[i].filter(s => s.done).length;
-    const all = done === ex.sets;
+    const all = done === logSets[i].length;
     const timed = timedMode(ex);  // null | 'seconds' | 'minutes'
     const isTimedEx = timed !== null;
     const restLabel = ex.cardio ? '' : `Rest between sets: ${ex.rest}s`;
@@ -2544,9 +2579,9 @@ function renderLog() {
         <div class="ex-log-hd ${all ? 'ex-log-hd-done' : ''}" onclick="toggleExLog(${i})">
           <div>
             <div class="ex-log-title">${ex.name} ${ex.key ? '<span class="chip chip-rose" style="font-size:10px;padding:2px 7px;">Key</span>' : ''}</div>
-            <div class="ex-log-sub">${ex.type} · ${ex.sets} sets · ${ex.reps}</div>
+            <div class="ex-log-sub">${ex.type} · ${logSets[i].length} sets · ${ex.reps}</div>
           </div>
-          <div class="ex-progress-badge ${all ? 'complete' : ''}" id="badge-${i}">${done}/${ex.sets}</div>
+          <div class="ex-progress-badge ${all ? 'complete' : ''}" id="badge-${i}">${done}/${logSets[i].length}</div>
         </div>
         <div class="ex-log-body" id="exbody-${i}" style="display:none;">
           <div class="coaching-tip">
@@ -2584,10 +2619,16 @@ function renderLog() {
               </div>
             </div>`).join('')}
           ${prev ? `<div class="prev-best">${isTimedEx ? `Last session: ${prev.r} ${timed === 'minutes' ? 'min' : 'sec'}` : (prev.w ? `Last session: ${prev.w}kg × ${prev.r} reps` : `Last session: ${prev.r} reps`)}</div>` : ''}
-          <button class="add-set-btn" onclick="addSet(${i})">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Add set
-          </button>
+          <div class="set-count-row">
+            <button class="remove-set-btn" onclick="removeSet(${i})" ${logSets[i].length <= 1 ? 'disabled' : ''}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Remove set
+            </button>
+            <button class="add-set-btn" onclick="addSet(${i})">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add set
+            </button>
+          </div>
         </div>
       </div>`;
   }).join('') + customExHtml + addExFormHtml;
@@ -2662,16 +2703,16 @@ function tickSet(ei, si, restSec) {
   document.getElementById(`chk-${ei}-${si}`).classList.toggle('done', s.done);
   const row = document.getElementById(`sr-${ei}-${si}`);
   row.querySelectorAll('.set-inp:not([readonly])').forEach(inp => inp.classList.toggle('done-inp', s.done));
-  const allEx = getCurrentExercises();
   const done = logSets[ei].filter(x => x.done).length;
-  const all = done === allEx[ei].sets;
+  const all = done === logSets[ei].length;
   const badge = document.getElementById(`badge-${ei}`);
-  badge.textContent = `${done}/${allEx[ei].sets}`;
+  badge.textContent = `${done}/${logSets[ei].length}`;
   badge.className = `ex-progress-badge${all ? ' complete' : ''}`;
   const hd = badge.closest('.ex-log-card')?.querySelector('.ex-log-hd');
   if (hd) hd.classList.toggle('ex-log-hd-done', all);
   if (s.done && restSec > 0) startRest(restSec);
   if (s.done && all) {
+    const allEx = getCurrentExercises();
     setTimeout(() => {
       const body = document.getElementById(`exbody-${ei}`);
       if (body) body.style.display = 'none';
@@ -2691,6 +2732,12 @@ function tickSet(ei, si, restSec) {
 function addSet(ei) {
   const last = logSets[ei][logSets[ei].length - 1] || {};
   logSets[ei].push({ w: last.w || '', r: last.r || '', done: false });
+  renderLog();
+}
+
+function removeSet(ei) {
+  if (logSets[ei].length <= 1) return;
+  logSets[ei].pop();
   renderLog();
 }
 
@@ -2741,8 +2788,8 @@ async function finishWorkout() {
     });
   });
 
-  // Total possible sets in this session
-  const totalPossible = allExercises.reduce((n, ex) => n + (ex.sets || 1), 0);
+  // Total possible sets in this session (uses the actual, possibly edited, set count per exercise)
+  const totalPossible = allExercises.reduce((n, ex, i) => n + (logSets[i]?.length || ex.sets || 1), 0);
   const completionPct = totalPossible > 0 ? Math.round((totalSets / totalPossible) * 100) : 100;
 
   let entry = {
@@ -4554,6 +4601,7 @@ window.toggleDayCard = toggleDayCard;
 window.tickSet = tickSet;
 window.updSet = updSet;
 window.addSet = addSet;
+window.removeSet = removeSet;
 window.finishWorkout = finishWorkout;
 window.closeModal = closeModal;
 window.skipRest = skipRest;
