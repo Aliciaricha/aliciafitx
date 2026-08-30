@@ -877,9 +877,10 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
   <div class="nut-lg-wrap">
     <div class="nut-lg-track">
       <div class="nut-lg-thumb" id="nut-lg-thumb"></div>
-      <button class="nut-lg-seg active" id="nut-seg-train" onclick="nutSwitch('train')">Training Day</button>
-      <button class="nut-lg-seg" id="nut-seg-rest" onclick="nutSwitch('rest')">Rest Day</button>
-      <button class="nut-lg-seg" id="nut-seg-supps" onclick="nutSwitch('supps')">Supplements</button>
+      <button class="nut-lg-seg active" id="nut-seg-train" onclick="nutSwitch('train')">Training</button>
+      <button class="nut-lg-seg" id="nut-seg-rest" onclick="nutSwitch('rest')">Rest</button>
+      <button class="nut-lg-seg" id="nut-seg-supps" onclick="nutSwitch('supps')">Supplmt.</button>
+      <button class="nut-lg-seg" id="nut-seg-shop" onclick="nutSwitch('shop')">Grocery</button>
     </div>
   </div>
 
@@ -1056,6 +1057,22 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
       Most affordable stack: Life Extension multi + Solgar Iron + Doctor's Best Magnesium + Optimum Nutrition creatine ≈ <strong style="color:var(--ink);">~132 AED/month</strong>
     </div>
     <div style="height:16px;"></div>
+  </div>
+
+  <!-- GROCERY LIST TAB -->
+  <div id="nut-tab-shop" style="display:none;">
+    <div style="margin:0 16px 12px;background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;box-shadow:var(--shadow-sm);">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+        <div>
+          <div style="font-size:10.5px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink3);">Grocery List</div>
+          <div id="shop-count" style="font-size:12px;color:var(--ink3);margin-top:3px;">loading…</div>
+        </div>
+        <button id="shop-clear" onclick="clearShopChecks()" style="flex-shrink:0;padding:7px 12px;border:1px solid var(--border2);border-radius:var(--r-sm);background:var(--white);color:var(--ink2);font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;font-size:11.5px;font-weight:600;cursor:pointer;">Uncheck all</button>
+      </div>
+      <div style="margin-top:10px;padding:8px 10px;background:var(--sage-bg);border-radius:var(--r-xs);font-size:11px;color:var(--sage-dk);line-height:1.5;">Every ingredient from your training &amp; rest day meals, grouped by aisle. Updates automatically whenever you change meals in North Star and reload.</div>
+    </div>
+    <div id="shop-list" style="margin:0 16px;display:flex;flex-direction:column;gap:12px;"></div>
+    <div style="height:24px;"></div>
   </div>
 </div>
 
@@ -3106,6 +3123,10 @@ function renderLiveNutrition() {
     renderRestMealCard('train-dinnerA-foods', 'train-dinnerA-sub', 'train-dinnerA-macros', d.trainingMeals.dinnerA, mainM);
     renderRestMealCard('train-dinnerB-foods', 'train-dinnerB-sub', 'train-dinnerB-macros', d.trainingMeals.dinnerB, mainM);
   }
+
+  // Rebuild the grocery list from the freshly-fetched meals so it always matches North Star.
+  cacheShoppingItems(collectShoppingIngredients());
+  renderShoppingList();
 }
 
 function renderLiveNutritionUnavailable() {
@@ -3119,7 +3140,143 @@ function renderLiveNutritionUnavailable() {
     const el = document.getElementById(id);
     if (el) el.innerHTML = `<div style="font-size:12px;color:var(--ink3);font-style:italic;">Couldn't reach North Star — check your connection and reopen this page.</div>`;
   });
+  // Fall back to the last known grocery list so it still shows offline.
+  renderShoppingList();
 }
+
+/* ═══════════════════════════════════════════════════════
+   GROCERY LIST — built from the live North Star meals,
+   deduplicated, grouped by aisle, checkmarks persist locally.
+═══════════════════════════════════════════════════════ */
+const SHOP_CHECKS_KEY = 'aliciafitx_shop_checks';
+const SHOP_CACHE_KEY  = 'aliciafitx_shop_cache';
+const GROCERY_CATEGORIES = ['Protein', 'Dairy & Eggs', 'Fruit & Vegetable', 'Pantry'];
+const GROCERY_KEYWORDS = {
+  'Protein': ['chicken','turkey','beef','steak','mince','lamb','pork','bacon','sausage','salmon','tuna','cod','tilapia','haddock','mackerel','sardine','anchov','shrimp','prawn','fish','tofu','tempeh','seitan','whey','protein powder','edamame'],
+  'Dairy & Eggs': ['egg','milk','yogurt','yoghurt','cheese','butter','cream','ghee','mozzarella','feta','parmesan','kefir','paneer','ricotta'],
+  'Fruit & Vegetable': ['apple','banana','berry','berries','strawberr','blueberr','raspberr','spinach','broccoli','kale','lettuce','tomato','cucumber','pepper','capsicum','onion','garlic','carrot','potato','avocado','mushroom','zucchini','courgette','asparagus','lemon','lime','orange','mango','pineapple','grape','cauliflower','celery','pea','corn','salad','beetroot','ginger','herb','parsley','coriander','cilantro','basil','mint','cabbage','pumpkin','fruit','vegetable','veg']
+};
+
+// Best-effort keyword match into one of the four grocery aisles; anything unmatched is Pantry.
+function categorizeGroceryItem(label) {
+  const l = label.toLowerCase();
+  for (const cat of ['Protein', 'Dairy & Eggs', 'Fruit & Vegetable']) {
+    if (GROCERY_KEYWORDS[cat].some(kw => l.includes(kw))) return cat;
+  }
+  return 'Pantry';
+}
+
+// Pull every ingredient name from the live training + rest meals; split combined
+// entries, de-duplicate, and tag with a grocery aisle. Returns [{key, label, category}] sorted A→Z.
+function collectShoppingIngredients() {
+  const out = new Map();
+  const addFrom = (mealGroup) => {
+    if (!mealGroup) return;
+    Object.values(mealGroup).forEach(meal => {
+      if (!Array.isArray(meal)) return;
+      meal.forEach(ing => {
+        const nameRaw = (ing && typeof ing === 'object') ? (ing.name || '') : String(ing || '');
+        nameRaw.split(/·|,|\band\b/i).forEach(part => {
+          const label = part.trim();
+          if (!label) return;
+          const key = label.toLowerCase();
+          if (key && !out.has(key)) out.set(key, titleCaseFood(label));
+        });
+      });
+    });
+  };
+  if (liveNutrition) {
+    addFrom(liveNutrition.trainingMeals);
+    addFrom(liveNutrition.restMeals);
+  }
+  return [...out.entries()]
+    .map(([key, label]) => ({ key, label, category: categorizeGroceryItem(label) }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+}
+
+function getShopChecks() {
+  try { return JSON.parse(localStorage.getItem(SHOP_CHECKS_KEY)) || {}; }
+  catch { return {}; }
+}
+function setShopChecks(obj) {
+  try { localStorage.setItem(SHOP_CHECKS_KEY, JSON.stringify(obj)); } catch {}
+}
+
+// Persist the last known ingredient list so the tab still works offline.
+function cacheShoppingItems(items) {
+  try { localStorage.setItem(SHOP_CACHE_KEY, JSON.stringify(items)); } catch {}
+}
+function getCachedShoppingItems() {
+  try { return JSON.parse(localStorage.getItem(SHOP_CACHE_KEY)) || []; }
+  catch { return []; }
+}
+
+function toggleShopItem(key) {
+  const checks = getShopChecks();
+  if (checks[key]) delete checks[key]; else checks[key] = true;
+  setShopChecks(checks);
+  renderShoppingList();
+}
+
+function clearShopChecks() {
+  setShopChecks({});
+  renderShoppingList();
+}
+
+let shopDelegationBound = false;
+function renderShoppingList() {
+  const listEl = document.getElementById('shop-list');
+  if (!listEl) return;
+
+  // Prefer live items; fall back to the cached list if North Star hasn't loaded.
+  let items = collectShoppingIngredients();
+  if (!items.length) items = getCachedShoppingItems();
+
+  const checks = getShopChecks();
+  const countEl = document.getElementById('shop-count');
+
+  if (!items.length) {
+    listEl.innerHTML = `<div style="padding:18px 4px;font-size:12px;color:var(--ink3);font-style:italic;text-align:center;">No ingredients yet — they'll appear once your meals load from North Star.</div>`;
+    if (countEl) countEl.textContent = '0 items';
+    return;
+  }
+
+  const done = items.filter(it => checks[it.key]).length;
+  if (countEl) countEl.textContent = `${done} of ${items.length} gathered`;
+
+  const groups = GROCERY_CATEGORIES
+    .map(cat => ({ cat, items: items.filter(it => (it.category || categorizeGroceryItem(it.label)) === cat) }))
+    .filter(g => g.items.length);
+
+  listEl.innerHTML = groups.map(g => `
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-sm);">
+      <div style="padding:10px 14px;border-bottom:1px solid var(--border);background:var(--paper);font-size:10.5px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink3);">${g.cat}</div>
+      ${g.items.map((it, i) => {
+        const isOn = !!checks[it.key];
+        const isLast = i === g.items.length - 1;
+        return `
+        <button type="button" data-key="${it.key.replace(/"/g, '&quot;')}"
+          style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:12px 14px;background:transparent;${isLast ? '' : 'border-bottom:1px solid var(--border);'}border-left:none;border-right:none;border-top:none;cursor:pointer;-webkit-tap-highlight-color:transparent;">
+          <span style="flex-shrink:0;width:22px;height:22px;border-radius:6px;border:1.8px solid ${isOn ? 'var(--sage-dk)' : 'var(--border2)'};background:${isOn ? 'var(--sage-dk)' : 'transparent'};display:flex;align-items:center;justify-content:center;transition:all 0.15s;">
+            ${isOn ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+          </span>
+          <span style="font-size:13.5px;color:${isOn ? 'var(--ink3)' : 'var(--ink)'};text-decoration:${isOn ? 'line-through' : 'none'};">${it.label}</span>
+        </button>`;
+      }).join('')}
+    </div>
+  `).join('');
+
+  // Single delegated listener (iOS-safe: real <button> elements, bound once).
+  if (!shopDelegationBound) {
+    listEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-key]');
+      if (btn) toggleShopItem(btn.getAttribute('data-key'));
+    });
+    shopDelegationBound = true;
+  }
+}
+window.clearShopChecks = clearShopChecks;
+window.renderShoppingList = renderShoppingList;
 
 /* ═══════════════════════════════════════════════════════
    NUTRITION
@@ -3187,16 +3344,19 @@ function nutSwitch(type) {
   const track = document.querySelector('.nut-lg-track');
   const segs = track.querySelectorAll('.nut-lg-seg');
   const thumb = document.getElementById('nut-lg-thumb');
-  const idx = { train: 0, rest: 1, supps: 2 }[type];
+  const idx = { train: 0, rest: 1, supps: 2, shop: 3 }[type];
   segs.forEach((s, i) => s.classList.toggle('active', i === idx));
   thumb.style.left = segs[idx].offsetLeft + 'px';
   thumb.style.width = segs[idx].offsetWidth + 'px';
-  document.getElementById('nut-tab-meals').style.display = type !== 'supps' ? 'block' : 'none';
+  const isMeals = (type === 'train' || type === 'rest');
+  document.getElementById('nut-tab-meals').style.display = isMeals ? 'block' : 'none';
   document.getElementById('nut-tab-supps').style.display = type === 'supps' ? 'block' : 'none';
-  if (type !== 'supps') {
+  document.getElementById('nut-tab-shop').style.display = type === 'shop' ? 'block' : 'none';
+  if (isMeals) {
     document.getElementById('nut-train-meals').style.display = type === 'train' ? 'block' : 'none';
     document.getElementById('nut-rest-meals').style.display = type === 'rest' ? 'block' : 'none';
   }
+  if (type === 'shop') renderShoppingList();
 }
 
 async function addFood() {
