@@ -448,6 +448,33 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 .remove-set-btn:disabled { opacity:0.4; cursor:not-allowed; }
 .prev-best { font-family:'DM Mono', monospace; font-size:11px; color:var(--ink3); margin-top:8px; padding-top:8px; border-top:1px solid var(--border); }
 
+/* Best-ever / last-workout context, always visible in the card header */
+.ex-log-hd-info { flex:1; min-width:0; margin-right:10px; }
+.ex-context { margin-top:6px; display:flex; flex-direction:column; gap:3px; font-size:11.5px; color:var(--ink3); line-height:1.35; }
+.ex-context .ctx-lbl { display:inline-block; min-width:34px; font-size:9.5px; font-weight:700; letter-spacing:0.6px; text-transform:uppercase; color:var(--ink3); }
+.ex-context .ctx-val { font-family:'DM Mono', monospace; color:var(--ink2); }
+.ex-context .ctx-date { margin-left:4px; font-size:10.5px; }
+.ex-context .ctx-text { color:var(--ink2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+/* Per-exercise notes and gym settings — saved, carry over every session */
+.ex-notes { margin:0 0 12px; display:flex; flex-direction:column; gap:10px; }
+.ex-notes label { display:block; font-size:10px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--ink3); margin-bottom:4px; }
+.ex-notes textarea {
+  width:100%; box-sizing:border-box; padding:9px 11px; resize:vertical;
+  border:1.5px solid var(--border); border-radius:var(--r-sm); background:#ffffff;
+  font-family:inherit; font-size:16px; line-height:1.45; color:var(--ink);
+}
+.ex-notes textarea:focus { outline:none; border-color:var(--charcoal); }
+
+/* Cardio bouts — one row per bout, fields depend on the machine */
+.cardio-row { display:flex; align-items:flex-end; gap:8px; margin-bottom:8px; }
+.cardio-row .set-num { width:20px; padding-bottom:12px; }
+.cardio-fields { flex:1; display:grid; gap:6px; min-width:0; }
+.cardio-field { display:flex; flex-direction:column; gap:3px; min-width:0; font-size:9.5px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:var(--ink3); text-align:center; }
+.cardio-quick { margin:0 16px 16px; display:flex; gap:6px; flex-wrap:wrap; justify-content:center; align-items:center; }
+.cardio-quick span { font-size:11px; color:var(--ink3); margin-right:2px; }
+.cardio-quick button { padding:6px 12px; border-radius:var(--r-pill); border:1.5px solid var(--sky); background:var(--sky-bg); color:var(--sky-dk); font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; }
+
 /* ── REST TIMER — highly visible ─────────────────────────────────── */
 .rest-timer-bar {
   position:fixed; top:0; left:0; right:0; z-index:200;
@@ -755,6 +782,9 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
       <div style="text-align:center;font-size:10px;font-weight:600;color:var(--ink3);padding-bottom:4px;">S</div>
     </div>
     <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;"></div>
+    <div id="cal-detail" style="display:none;margin-top:12px;padding:12px;background:var(--paper);border:1px solid var(--border);border-radius:var(--r-sm);">
+      <div id="cal-detail-content"></div>
+    </div>
     <div style="display:flex;gap:14px;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);flex-wrap:wrap;">
       <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3);">
         <div style="width:10px;height:10px;border-radius:50%;background:var(--sage);flex-shrink:0;"></div>Done
@@ -1604,6 +1634,8 @@ function loadMockData() {
     'Lateral Raise':            { w:4,    r:15 },
   };
 
+  recomputePBs();
+
   // Load targets from DEFAULT_TARGETS constant in preview mode
   appState.targets = {};
   DEFAULT_TARGETS.forEach(t => {
@@ -1699,6 +1731,12 @@ async function loadFromSupabase() {
     // Merge any same-day duplicates that exist in the database
     await mergeDuplicates();
 
+    // Rebuild PBs from history (fixes any stale rows in personal_bests)
+    await syncPBs();
+
+    // Exercise notes & gym settings
+    await loadRemoteExNotes();
+
     // Start date
     if (appState.workoutHistory.length > 0) {
       appState.startDate = appState.workoutHistory[0].ts;
@@ -1738,6 +1776,10 @@ async function updateWorkout(id, entry) {
   if (window.PREVIEW_MODE) return true;
   showSync('syncing', 'Merging sessions…');
   const { error } = await sb.from('workouts').update({
+    phase: entry.phase,
+    day_key: entry.dayKey,
+    day_name: entry.dayName,
+    focus: entry.focus,
     sets_data: entry.sets,
     total_sets: entry.totalSets,
     vol: entry.vol,
@@ -1749,11 +1791,15 @@ async function updateWorkout(id, entry) {
 }
 
 function mergeWorkoutSets(existingSets, newSets) {
-  // Find highest set index per exercise in the existing record
-  const maxSiByEx = {};
+  // Find highest set index per exercise in the existing record, and which
+  // exercise each index holds
+  const maxSiByEx = {}, eiByName = {};
+  let maxEi = -1;
   for (const k in existingSets) {
     const [ei, si] = k.split('_').map(Number);
     if (maxSiByEx[ei] === undefined || si > maxSiByEx[ei]) maxSiByEx[ei] = si;
+    if (existingSets[k]?.name) eiByName[existingSets[k].name] = ei;
+    maxEi = Math.max(maxEi, ei);
   }
   // Group new sets by exercise index, sorted
   const newByEx = {};
@@ -1764,7 +1810,14 @@ function mergeWorkoutSets(existingSets, newSets) {
   }
   const merged = { ...existingSets };
   for (const eiStr in newByEx) {
-    const ei = parseInt(eiStr);
+    // Same exercise → append to it. A different exercise whose index is
+    // already taken (e.g. a custom cardio session merged into Monday's
+    // lifts) gets a fresh index instead of being mixed into another lift.
+    const name = newByEx[eiStr][0].data?.name;
+    let ei = name !== undefined ? eiByName[name] : undefined;
+    if (ei === undefined) ei = maxSiByEx[parseInt(eiStr)] === undefined ? parseInt(eiStr) : maxEi + 1;
+    maxEi = Math.max(maxEi, ei);
+    if (name !== undefined) eiByName[name] = ei;
     const nextSi = maxSiByEx[ei] !== undefined ? maxSiByEx[ei] + 1 : 0;
     newByEx[eiStr].sort((a, b) => a.si - b.si).forEach((item, idx) => {
       merged[`${ei}_${nextSi + idx}`] = item.data;
@@ -2261,10 +2314,9 @@ function renderProgram() {
                     if (maxR) lastLabel = `Last: ${maxR} reps`;
                   }
                 }
-              } else if (!isTimed && appState.pbs?.[ex.name]?.w) {
-                const pb = appState.pbs[ex.name];
-                lastLabel = `PB: ${pb.w}kg × ${pb.r}r`;
               }
+              const pb = !isTimed && appState.pbs?.[ex.name];
+              const pbLabel = pb?.w ? `Best: ${pb.w}kg × ${pb.r}r` : '';
               return `
               <div class="prog-ex-row">
                 <div class="prog-ex-info">
@@ -2279,6 +2331,7 @@ function renderProgram() {
                 <div style="text-align:right;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
                   <div style="font-family:'DM Mono',monospace;font-size:14px;font-weight:500;color:var(--charcoal);">${ex.sets}×${ex.reps}</div>
                   ${tgt ? `<span style="background:var(--rose-bg);color:var(--rose-dk);border:1px solid var(--rose-mid);padding:2px 8px;border-radius:50px;font-size:10px;font-family:'DM Mono',monospace;white-space:nowrap;">↑ ${tgt.w}</span>` : ''}
+                  ${pbLabel ? `<span style="font-size:10px;color:var(--ink3);font-family:'DM Mono',monospace;white-space:nowrap;">${pbLabel}</span>` : ''}
                   ${lastLabel ? `<span style="font-size:10px;color:var(--ink3);font-family:'DM Mono',monospace;white-space:nowrap;">${lastLabel}</span>` : ''}
                 </div>
               </div>`;
@@ -2426,10 +2479,7 @@ function renderLog() {
   const baseOffset = day.exercises.length;
   const customExHtml = customExercises.map((ex, ci) => {
     const i = baseOffset + ci;
-    const lastSessionSets = findLastSession(ex.name);
-    const prev = lastSessionSets
-      ? lastSessionSets.reduce((best, s) => (!best || parseFloat(s.w) > parseFloat(best.w)) ? s : best, null)
-      : findPrev(history, ex.name);
+    if (ex.cardioType) return renderCardioCard(i, ex);
     if (!logSets[i]) {
       logSets[i] = Array.from({ length: ex.sets }, () => ({ w: '', r: '', done: false }));
     }
@@ -2443,13 +2493,15 @@ function renderLog() {
     return `
       <div class="ex-log-card" style="border-color:var(--sky-dk);border-width:1.5px;">
         <div class="ex-log-hd ${all ? 'ex-log-hd-done' : ''}" onclick="toggleExLog(${i})">
-          <div>
-            <div class="ex-log-title">${ex.name} <span class="chip" style="background:var(--sky-bg);color:var(--sky-dk);font-size:10px;padding:2px 7px;border-radius:50px;">Custom</span></div>
-            <div class="ex-log-sub">${ex.equipment || ex.type} · ${logSets[i].length} sets · ${ex.reps}</div>
+          <div class="ex-log-hd-info">
+            <div class="ex-log-title">${escHtml(ex.name)} <span class="chip" style="background:var(--sky-bg);color:var(--sky-dk);font-size:10px;padding:2px 7px;border-radius:50px;">Custom</span></div>
+            <div class="ex-log-sub">${ex.equipment || ex.type} · ${logSets[i].length} sets · ${escHtml(ex.reps)}</div>
+            ${renderExContext(ex)}
           </div>
           <div class="ex-progress-badge ${all ? 'complete' : ''}" id="badge-${i}">${done}/${logSets[i].length}</div>
         </div>
         <div class="ex-log-body" id="exbody-${i}" style="display:block;">
+          ${renderExNotes(i, ex)}
           ${restLabel ? `<div style="margin:0 0 12px;"><span style="display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:5px;background:#fdf0e8;color:#b86020;font-size:11.5px;font-weight:600;">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             Rest: ${ex.rest}s
@@ -2479,7 +2531,6 @@ function renderLog() {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
               </div>
             </div>`).join('')}
-          ${prev ? `<div class="prev-best">${isTimedEx ? `Last session: ${prev.r} ${timed === 'minutes' ? 'min' : 'sec'}` : (prev.w ? `Last session: ${prev.w}kg × ${prev.r} reps` : `Last session: ${prev.r} reps`)}</div>` : ''}
           <div class="set-count-row">
             <button class="remove-set-btn" onclick="removeSet(${i})" ${logSets[i].length <= 1 ? 'disabled' : ''}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -2501,13 +2552,18 @@ function renderLog() {
         <div style="display:flex;flex-direction:column;gap:10px;">
           <input id="cex-name" type="text" placeholder="Exercise name (e.g. Leg Press)" inputmode="text"
             style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:14px;font-family:inherit;box-sizing:border-box;background:#fff;color:var(--ink);">
-          <select id="cex-type" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:14px;font-family:inherit;background:#fff;color:var(--ink);-webkit-appearance:none;appearance:none;">
+          <select id="cex-type" onchange="onCexTypeChange(this.value)" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:14px;font-family:inherit;background:#fff;color:var(--ink);-webkit-appearance:none;appearance:none;">
             <option value="Compound">Compound</option>
             <option value="Accessory" selected>Accessory</option>
             <option value="Core">Core</option>
             <option value="Cardio">Cardio</option>
           </select>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div id="cex-machine-row" style="display:none;">
+            <select id="cex-machine" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:14px;font-family:inherit;background:#fff;color:var(--ink);-webkit-appearance:none;appearance:none;">
+              ${Object.entries(CARDIO_MACHINES).map(([id, m]) => `<option value="${id}">${m.label} — ${m.fields.map(f => CARDIO_FIELDS[f].label.toLowerCase()).join(', ')}</option>`).join('')}
+            </select>
+          </div>
+          <div id="cex-sets-row" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
             <input id="cex-sets" type="number" placeholder="Sets (e.g. 3)" inputmode="numeric" min="1" max="10"
               style="padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:14px;font-family:inherit;background:#fff;color:var(--ink);">
             <input id="cex-reps" type="text" placeholder="Reps (e.g. 12)" inputmode="text"
@@ -2525,6 +2581,10 @@ function renderLog() {
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Add custom exercise
       </button>
+    </div>
+    <div class="cardio-quick">
+      <span>Quick add cardio:</span>
+      ${['treadmill','climber','cross','bike'].map(id => `<button onclick="addCardioEx('${id}')">${CARDIO_MACHINES[id].label}</button>`).join('')}
     </div>`;
 
   list.innerHTML = warmupHtml + cardioPickerHtml + day.exercises.map((ex, i) => {
@@ -2555,22 +2615,26 @@ function renderLog() {
     if (!isTimedEx && !ex.cardio && prev) {
       const rule = PROGRESSION_RULES[ex.name];
       const prevW = prev.w ? parseFloat(prev.w) : null;
-      const bestRepsSet = lastSessionSets
-        ? lastSessionSets.reduce((b, s) => (!b || (parseInt(s.r) || 0) > (parseInt(b.r) || 0)) ? s : b, null)
-        : prev;
-      const prevR = parseInt(bestRepsSet?.r) || parseInt(prev.r) || 0;
+      // Reps only count at the working (heaviest) weight — a lighter
+      // back-off set must not trigger a weight increase.
+      const pool = lastSessionSets || [prev];
+      const workSets = prevW ? pool.filter(s => parseFloat(s.w) === prevW) : pool;
+      const workReps = workSets.map(s => parseInt(s.r) || 0);
+      const prevR = workReps.length ? Math.max(...workReps) : (parseInt(prev.r) || 0);
+      const minR  = workReps.length ? Math.min(...workReps) : prevR;
 
       if (rule && rule.mode === 'reps') {
         const tgtR = prevR + rule.inc;
         targetBox = targetBoxWrap(`${tgtR} reps`, `Last time: ${prevR} reps &nbsp;·&nbsp; +${rule.inc} every session.`);
       } else if (rule && rule.mode === 'weight-after-reps' && prevW) {
-        const metTarget = prevR >= rule.repTarget;
+        // Weight goes up only once every working set reached the rep target
+        const metTarget = minR >= rule.repTarget;
         const tgtW = metTarget ? Math.round((prevW + rule.inc) * 100) / 100 : prevW;
-        const tgtR = metTarget ? rule.repTarget : Math.min(prevR + 1, rule.repTarget);
+        const tgtR = metTarget ? (parseInt(ex.reps) || rule.repTarget) : Math.min(prevR + 1, rule.repTarget);
         targetBox = targetBoxWrap(`${tgtW}kg &times; ${tgtR}`,
           metTarget
-            ? `Hit ${rule.repTarget} clean last time — weight goes up.`
-            : `Last time: ${prevW}kg &times; ${prevR}. Build to ${rule.repTarget} reps across all sets before the weight increases.`);
+            ? `All sets hit ${rule.repTarget} at ${prevW}kg last time (${workReps.join(', ')}) — weight goes up.`
+            : `Last time at ${prevW}kg: ${workReps.join(', ')} reps. Get every set to ${rule.repTarget} before the weight increases.`);
       } else if (rule && rule.mode === 'weight' && prevW) {
         const tgtW = Math.round((prevW + rule.inc) * 100) / 100;
         const tgtR = parseInt(ex.reps) || prevR;
@@ -2591,13 +2655,15 @@ function renderLog() {
     return `
       <div class="ex-log-card">
         <div class="ex-log-hd ${all ? 'ex-log-hd-done' : ''}" onclick="toggleExLog(${i})">
-          <div>
+          <div class="ex-log-hd-info">
             <div class="ex-log-title">${ex.name} ${ex.key ? '<span class="chip chip-rose" style="font-size:10px;padding:2px 7px;">Key</span>' : ''}</div>
             <div class="ex-log-sub">${ex.equipment || ex.type} · ${logSets[i].length} sets · ${ex.reps}</div>
+            ${renderExContext(ex)}
           </div>
           <div class="ex-progress-badge ${all ? 'complete' : ''}" id="badge-${i}">${done}/${logSets[i].length}</div>
         </div>
         <div class="ex-log-body" id="exbody-${i}" style="display:none;">
+          ${renderExNotes(i, ex)}
           <div class="coaching-tip">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="flex-shrink:0;margin-right:6px;display:inline-block;vertical-align:middle"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             ${ex.note}
@@ -2632,7 +2698,6 @@ function renderLog() {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
               </div>
             </div>`).join('')}
-          ${prev ? `<div class="prev-best">${isTimedEx ? `Last session: ${prev.r} ${timed === 'minutes' ? 'min' : 'sec'}` : (prev.w ? `Last session: ${prev.w}kg × ${prev.r} reps` : `Last session: ${prev.r} reps`)}</div>` : ''}
           <div class="set-count-row">
             <button class="remove-set-btn" onclick="removeSet(${i})" ${logSets[i].length <= 1 ? 'disabled' : ''}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -2654,6 +2719,7 @@ function hideAddExFormFn() { showAddExForm = false; renderLog(); }
 function submitCustomEx() {
   const name = (document.getElementById('cex-name')?.value || '').trim();
   const type = document.getElementById('cex-type')?.value || 'Accessory';
+  if (type === 'Cardio') { addCardioEx(document.getElementById('cex-machine')?.value, name); return; }
   const sets = parseInt(document.getElementById('cex-sets')?.value) || 3;
   const reps = (document.getElementById('cex-reps')?.value || '').trim() || '10 reps';
   if (!name) { document.getElementById('cex-name')?.focus(); return; }
@@ -2745,7 +2811,7 @@ function tickSet(ei, si, restSec) {
 
 function addSet(ei) {
   const last = logSets[ei][logSets[ei].length - 1] || {};
-  logSets[ei].push({ w: last.w || '', r: last.r || '', done: false });
+  logSets[ei].push({ w: '', r: '', ...last, done: false });
   renderLog();
 }
 
@@ -2787,12 +2853,14 @@ function renderIntervalCard(i, ex, history) {
   return `
     <div class="ex-log-card">
       <div class="ex-log-hd">
-        <div>
+        <div class="ex-log-hd-info">
           <div class="ex-log-title">${ex.name}</div>
           <div class="ex-log-sub">4 rounds · 4 min hard / 3 min easy</div>
+          ${renderExContext(ex)}
         </div>
       </div>
       <div class="ex-log-body" style="display:block;">
+        ${renderExNotes(i, ex)}
         <div class="coaching-tip">${ex.note}</div>
         <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px;">
           ${INTERVAL_MACHINES.map(m => `<button onclick="setIntervalField(${i},'machine','${m.id}')" style="padding:8px 14px;border-radius:var(--r-pill);font-size:12.5px;font-weight:${st.machine===m.id?'600':'500'};border:1.5px solid ${st.machine===m.id?'var(--sky-dk)':'var(--border)'};background:${st.machine===m.id?'var(--sky-dk)':'#fff'};color:${st.machine===m.id?'#fff':'var(--ink2)'};cursor:pointer;">${m.label}</button>`).join('')}
@@ -2807,7 +2875,7 @@ function renderIntervalCard(i, ex, history) {
             ${[0,1,2,3,4].map(n => `<button onclick="setIntervalField(${i},'rounds',${n})" style="flex:1;padding:10px;border-radius:var(--r-xs);font-family:'DM Mono',monospace;font-weight:600;border:1.5px solid ${st.rounds===n?'var(--sky-dk)':'var(--border)'};background:${st.rounds===n?'var(--sky-dk)':'#fff'};color:${st.rounds===n?'#fff':'var(--ink2)'};cursor:pointer;">${n}</button>`).join('')}
           </div>
         </div>
-        ${prev ? `<div class="prev-best">Last session: ${prev.output || '—'} on ${INTERVAL_MACHINES.find(m=>m.id===prev.machine)?.label || prev.machine || '—'} · ${prev.rounds ?? '—'}/4 rounds</div>` : ''}
+        ${prev ? `<div class="prev-best">Last machine: ${INTERVAL_MACHINES.find(m=>m.id===prev.machine)?.label || prev.machine || '—'}</div>` : ''}
       </div>
     </div>`;
 }
@@ -2832,10 +2900,274 @@ function findLastSession(name) {
   const history = appState.workoutHistory || [];
   for (let i = history.length - 1; i >= 0; i--) {
     const sets = history[i].sets || {};
-    const exSets = Object.values(sets).filter(s => s && s.name === name && (s.w || s.r));
+    const exSets = Object.values(sets).filter(s => s && s.name === name && (s.w || s.r || s.cardioType));
     if (exSets.length > 0) return exSets;
   }
   return null;
+}
+
+/* ── Cardio machines ───────────────────────────────────────
+   Custom cardio is logged one row per bout. Minutes live in `r` so the
+   existing timed-set code keeps reading them; the machine readings sit
+   alongside. `cardioType` is deliberately not `machine`, which marks the
+   4×4 interval entry. */
+const CARDIO_MACHINES = {
+  treadmill: { label:'Treadmill',     fields:['r','incline','speed'] },
+  climber:   { label:'Climber',       fields:['r','steps','level'] },
+  cross:     { label:'Cross Trainer', fields:['r','level','distance'] },
+  bike:      { label:'Bike',          fields:['r','level','distance'] },
+  other:     { label:'Other Cardio',  fields:['r','pace','distance'] },
+};
+const CARDIO_FIELDS = {
+  r:        { label:'Min',       ph:'min',   mode:'decimal', fmt:v => `${v} min` },
+  incline:  { label:'Incline %', ph:'%',     mode:'decimal', fmt:v => `incline ${v}%` },
+  speed:    { label:'Speed kph', ph:'kph',   mode:'decimal', fmt:v => `${v} kph` },
+  steps:    { label:'Steps',     ph:'steps', mode:'numeric', fmt:v => `${v} steps` },
+  level:    { label:'Level',     ph:'lvl',   mode:'numeric', fmt:v => `level ${v}` },
+  distance: { label:'Distance',  ph:'dist',  mode:'decimal', fmt:v => `${v} distance` },
+  pace:     { label:'Pace',      ph:'6:30/km', mode:'text',  fmt:v => `pace ${v}` },
+};
+
+const hasVal = v => v !== undefined && v !== null && v !== '';
+
+function fmtCardio(s) {
+  const fields = (CARDIO_MACHINES[s.cardioType] || CARDIO_MACHINES.other).fields;
+  return fields.filter(f => hasVal(s[f])).map(f => CARDIO_FIELDS[f].fmt(s[f])).join(' · ') || '—';
+}
+
+// One logged set as short text, for history lists and emails.
+function fmtSet(s) {
+  if (!s) return '—';
+  if (s.machine) return `${s.output || '—'} · ${s.rounds ?? '—'}/4 rounds`;
+  if (s.cardioType) return fmtCardio(s);
+  if (s.w) return `${s.w}kg×${s.r}`;
+  if (s.r) return `${s.r}s`;
+  return '—';
+}
+
+// A whole session's sets for one exercise, e.g. "45kg × 20, 20, 18".
+function fmtSetList(sets, ex) {
+  if (!sets || !sets.length) return '';
+  if (sets[0].cardioType) return sets.map(fmtCardio).join(' | ');
+  if (sets[0].machine) return fmtSet(sets[0]);
+  const weights = sets.map(s => parseFloat(s.w) || 0);
+  if (weights.every(w => !w)) {
+    const unit = ex ? ({ minutes:' min', seconds:'s' }[timedMode(ex)] ?? ' reps') : ' reps';
+    return sets.map(s => s.r ?? '—').join(', ') + unit;
+  }
+  if (weights.every(w => w === weights[0])) return `${weights[0]}kg × ${sets.map(s => s.r ?? '—').join(', ')}`;
+  return sets.map(s => `${s.w || 0}×${s.r ?? '—'}`).join(', ') + ' kg';
+}
+
+// Heavier wins; at the same weight, more reps wins.
+function isBetterSet(s, best) {
+  if (!best) return true;
+  const w = parseFloat(s.w) || 0, bw = parseFloat(best.w) || 0;
+  if (w !== bw) return w > bw;
+  return (parseFloat(s.r) || 0) > (parseFloat(best.r) || 0);
+}
+
+// Best-ever set and the most recent session for one exercise, read
+// straight from logged history so it can never drift from what was done.
+function exerciseStats(name) {
+  let best = null, last = null;
+  for (const h of appState.workoutHistory || []) {
+    const sets = Object.values(h.sets || {}).filter(s => s && s.name === name && (s.w || s.r || s.cardioType));
+    if (!sets.length) continue;
+    if (!last || h.ts >= last.ts) last = { ts: h.ts, sets };
+    if (sets[0].cardioType || sets[0].machine) continue;
+    sets.forEach(s => { if (isBetterSet(s, best)) best = { w: s.w, r: s.r, ts: h.ts }; });
+  }
+  if (!best && appState.pbs?.[name]) best = { ...appState.pbs[name], ts: null };
+  return { best, last };
+}
+
+// Rebuild PBs from workout history. The stored table used to be updated
+// incrementally and could fall behind (edits, merges, deletes); history is
+// the source of truth. Returns names whose PB changed so callers can sync.
+function recomputePBs() {
+  const derived = {};
+  for (const h of appState.workoutHistory || []) {
+    for (const s of Object.values(h.sets || {})) {
+      if (!s?.name || !s.w || s.cardioType || s.machine) continue;
+      if (isBetterSet(s, derived[s.name])) derived[s.name] = { w: parseFloat(s.w), r: parseFloat(s.r) || 0 };
+    }
+  }
+  const changed = [];
+  for (const [name, pb] of Object.entries(derived)) {
+    const cur = appState.pbs[name];
+    if (!cur || cur.w !== pb.w || cur.r !== pb.r) changed.push(name);
+    appState.pbs[name] = pb;
+  }
+  return changed;
+}
+
+async function syncPBs() {
+  const changed = recomputePBs();
+  await Promise.all(changed.map(n => savePB(n, appState.pbs[n].w, appState.pbs[n].r)));
+}
+
+const fmtShortDate = ts => new Date(ts).toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+const escHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+
+function renderExContext(ex) {
+  const { best, last } = exerciseStats(ex.name);
+  const n = exNotes[ex.name] || {};
+  const rows = [];
+  if (best && best.w) {
+    rows.push(`<div><span class="ctx-lbl">Best</span><span class="ctx-val">${best.w}kg × ${best.r}</span>${best.ts ? `<span class="ctx-date">${fmtShortDate(best.ts)}</span>` : ''}</div>`);
+  }
+  if (last) {
+    rows.push(`<div><span class="ctx-lbl">Last</span><span class="ctx-val">${escHtml(fmtSetList(last.sets, ex))}</span><span class="ctx-date">${fmtShortDate(last.ts)}</span></div>`);
+  }
+  if (n.settings) rows.push(`<div class="ctx-text">⚙️ ${escHtml(n.settings)}</div>`);
+  if (n.notes)    rows.push(`<div class="ctx-text">📝 ${escHtml(n.notes)}</div>`);
+  return rows.length ? `<div class="ex-context">${rows.join('')}</div>` : '';
+}
+
+function renderExNotes(i, ex) {
+  const n = exNotes[ex.name] || {};
+  return `<div class="ex-notes">
+    <div>
+      <label>⚙️ Gym settings</label>
+      <textarea rows="1" placeholder="e.g. seat 4, back pad hole 3, incline 30°" oninput="setExNote(${i},'settings',this.value)">${escHtml(n.settings)}</textarea>
+    </div>
+    <div>
+      <label>📝 Notes</label>
+      <textarea rows="2" placeholder="Anything to remember for next time…" oninput="setExNote(${i},'notes',this.value)">${escHtml(n.notes)}</textarea>
+    </div>
+  </div>`;
+}
+
+/* ── Exercise notes ────────────────────────────────────────
+   Kept on the device in localStorage and synced to the Supabase
+   `exercise_notes` table when it exists (see supabase/exercise_notes.sql).
+   Without the table, notes still work — on this device only. */
+const EX_NOTES_KEY = 'aliciafit_ex_notes';
+let exNotes = {};            // { "Exercise Name": { notes, settings, ts } }
+let exNotesRemote = false;
+const exNoteTimers = {};
+
+function loadLocalExNotes() {
+  try { exNotes = JSON.parse(localStorage.getItem(EX_NOTES_KEY)) || {}; }
+  catch { exNotes = {}; }
+}
+function saveLocalExNotes() {
+  try { localStorage.setItem(EX_NOTES_KEY, JSON.stringify(exNotes)); } catch {}
+}
+
+async function loadRemoteExNotes() {
+  const { data, error } = await sb.from('exercise_notes').select('*');
+  if (error) { console.warn('exercise_notes unavailable — notes stay on this device', error); return; }
+  exNotesRemote = true;
+  const remoteTs = {};
+  (data || []).forEach(row => {
+    const ts = Date.parse(row.updated_at) || 0;
+    remoteTs[row.exercise] = ts;
+    const local = exNotes[row.exercise];
+    if (!local || (local.ts || 0) <= ts) exNotes[row.exercise] = { notes: row.notes || '', settings: row.settings || '', ts };
+  });
+  saveLocalExNotes();
+  // Push anything written on this device that the server hasn't seen
+  const pending = Object.keys(exNotes).filter(name => (exNotes[name].ts || 0) > (remoteTs[name] || 0));
+  await Promise.all(pending.map(pushExNote));
+}
+
+async function pushExNote(name) {
+  if (window.PREVIEW_MODE || !exNotesRemote) return;
+  const n = exNotes[name];
+  const { error } = await sb.from('exercise_notes').upsert({
+    exercise: name, notes: n.notes || '', settings: n.settings || '',
+    updated_at: new Date(n.ts || Date.now()).toISOString(),
+  }, { onConflict: 'exercise' });
+  if (error) console.error('Could not save exercise note', error);
+}
+
+function setExNote(i, field, val) {
+  const ex = getCurrentExercises()[i];
+  if (!ex) return;
+  const n = exNotes[ex.name] || (exNotes[ex.name] = { notes:'', settings:'' });
+  n[field] = val;
+  n.ts = Date.now();
+  saveLocalExNotes();
+  clearTimeout(exNoteTimers[ex.name]);
+  exNoteTimers[ex.name] = setTimeout(() => pushExNote(ex.name), 800);
+}
+
+/* ── Custom cardio ─────────────────────────────────────── */
+function addCardioEx(machine, name) {
+  const m = CARDIO_MACHINES[machine] ? machine : 'other';
+  customExercises.push({
+    name: name || CARDIO_MACHINES[m].label, type:'Cardio', equipment: CARDIO_MACHINES[m].label,
+    sets:1, reps:'min', rest:0, note:'', key:false, cardio:true, cardioType:m,
+  });
+  showAddExForm = false;
+  renderLog();
+}
+
+function onCexTypeChange(type) {
+  const cardio = type === 'Cardio';
+  const machineRow = document.getElementById('cex-machine-row');
+  const setsRow = document.getElementById('cex-sets-row');
+  if (machineRow) machineRow.style.display = cardio ? 'block' : 'none';
+  if (setsRow) setsRow.style.display = cardio ? 'none' : 'grid';
+  const nameInp = document.getElementById('cex-name');
+  if (nameInp) nameInp.placeholder = cardio ? 'Name (optional — defaults to the machine)' : 'Exercise name (e.g. Leg Press)';
+}
+
+function updCardio(ei, si, field, val) {
+  const v = String(val).trim();
+  logSets[ei][si][field] = (field === 'pace' || v === '' || isNaN(Number(v))) ? v : Number(v);
+  scheduleAutoSave();
+}
+
+function renderCardioCard(i, ex) {
+  const fields = (CARDIO_MACHINES[ex.cardioType] || CARDIO_MACHINES.other).fields;
+  if (!logSets[i]) logSets[i] = Array.from({ length: ex.sets || 1 }, () => ({ done:false }));
+  const done = logSets[i].filter(s => s.done).length;
+  const all = done === logSets[i].length;
+  const bouts = logSets[i].length;
+  return `
+    <div class="ex-log-card" style="border-color:var(--sky-dk);border-width:1.5px;">
+      <div class="ex-log-hd ${all ? 'ex-log-hd-done' : ''}" onclick="toggleExLog(${i})">
+        <div class="ex-log-hd-info">
+          <div class="ex-log-title">${escHtml(ex.name)} <span class="chip chip-sky" style="font-size:10px;padding:2px 7px;">Cardio</span></div>
+          <div class="ex-log-sub">${ex.equipment} · ${bouts} bout${bouts !== 1 ? 's' : ''}</div>
+          ${renderExContext(ex)}
+        </div>
+        <div class="ex-progress-badge ${all ? 'complete' : ''}" id="badge-${i}">${done}/${bouts}</div>
+      </div>
+      <div class="ex-log-body" id="exbody-${i}" style="display:block;">
+        ${renderExNotes(i, ex)}
+        ${logSets[i].map((s, si) => `
+          <div class="cardio-row" id="sr-${i}-${si}">
+            <div class="set-num">${si + 1}</div>
+            <div class="cardio-fields" style="grid-template-columns:repeat(${fields.length},1fr);">
+              ${fields.map(f => {
+                const F = CARDIO_FIELDS[f];
+                return `<label class="cardio-field">${F.label}
+                  <input class="set-inp ${s.done ? 'done-inp' : ''}" type="${F.mode === 'text' ? 'text' : 'number'}" step="any"
+                    inputmode="${F.mode}" placeholder="${F.ph}" value="${escHtml(s[f])}"
+                    onchange="updCardio(${i},${si},'${f}',this.value)">
+                </label>`;
+              }).join('')}
+            </div>
+            <div class="set-check ${s.done ? 'done' : ''}" id="chk-${i}-${si}" onclick="tickSet(${i},${si},0)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+          </div>`).join('')}
+        <div class="set-count-row">
+          <button class="remove-set-btn" onclick="removeSet(${i})" ${bouts <= 1 ? 'disabled' : ''}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Remove bout
+          </button>
+          <button class="add-set-btn" onclick="addSet(${i})">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add bout
+          </button>
+        </div>
+      </div>
+    </div>`;
 }
 
 async function finishWorkout() {
@@ -2850,6 +3182,17 @@ async function finishWorkout() {
         totalSets++;
         sets[`${i}_0`] = { name: ex.name, machine: st.machine, output: st.output, rounds: st.rounds };
       }
+      return;
+    }
+    if (ex.cardioType) {
+      const fields = (CARDIO_MACHINES[ex.cardioType] || CARDIO_MACHINES.other).fields;
+      (logSets[i] || []).forEach((set, si) => {
+        if (!fields.some(f => hasVal(set[f]))) return;
+        totalSets++;
+        const rec = { name: ex.name, cardioType: ex.cardioType, w: null, r: hasVal(set.r) ? parseFloat(set.r) : null };
+        fields.forEach(f => { if (f !== 'r' && hasVal(set[f])) rec[f] = set[f]; });
+        sets[`${i}_${si}`] = rec;
+      });
       return;
     }
     const timed = timedMode(ex) !== null;
@@ -2883,17 +3226,22 @@ async function finishWorkout() {
     const dt = new Date(h.ts);
     return dt.getDate() === today.getDate() &&
            dt.getMonth() === today.getMonth() &&
-           dt.getFullYear() === today.getFullYear() &&
-           h.dayKey === logDay;
+           dt.getFullYear() === today.getFullYear();
   };
   const existingEntry = appState.workoutHistory.find(isSameDay);
   if (existingEntry) {
     const mergedSets = mergeWorkoutSets(existingEntry.sets, entry.sets);
-    // Use naming from whichever session had more distinct exercises
+    // A programme day always names the record over a Custom session;
+    // otherwise use whichever session had more distinct exercises
     const countEx = h => new Set(Object.values(h.sets || {}).map(s => s?.name).filter(Boolean)).size;
-    const richer = countEx(entry) >= countEx(existingEntry) ? entry : existingEntry;
+    const preferNew = existingEntry.dayKey === 'custom' ? entry.dayKey !== 'custom'
+      : entry.dayKey === 'custom' ? false
+      : countEx(entry) >= countEx(existingEntry);
+    const richer = preferNew ? entry : existingEntry;
     const mergedEntry = {
       ...existingEntry,
+      phase: richer.phase,
+      dayKey: richer.dayKey,
       dayName: richer.dayName,
       focus: richer.focus,
       sets: mergedSets,
@@ -2934,9 +3282,10 @@ async function finishWorkout() {
     });
   });
   await Promise.all(pbPromises);
+  await syncPBs();
 
   stopRest();
-  lastFinishedEntry = { entry, day, logSetsSnapshot: JSON.parse(JSON.stringify(logSets)) };
+  lastFinishedEntry = { entry, day, exercises: allExercises, logSetsSnapshot: JSON.parse(JSON.stringify(logSets)) };
 
   // ── Populate modal ──────────────────────────────────────
   document.getElementById('modal-sub-text').textContent = `${day.name} — ${day.focus}`;
@@ -2965,6 +3314,14 @@ async function finishWorkout() {
       return `<div style="padding-bottom:8px;border-bottom:1px solid var(--border);">
         <div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:5px;">${ex.name}</div>
         <div style="font-size:12px;color:var(--ink2);">${st.output || '—'} on ${st.machine || '—'} · ${st.rounds ?? '—'}/4 rounds</div>
+      </div>`;
+    }
+    if (ex.cardioType) {
+      const bouts = (logSets[i] || []).map(s => ({ ...s, cardioType: ex.cardioType })).filter(s => fmtCardio(s) !== '—');
+      if (!bouts.length) return null;
+      return `<div style="padding-bottom:8px;border-bottom:1px solid var(--border);">
+        <div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:5px;">${escHtml(ex.name)}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;">${bouts.map(b => `<span style="background:var(--sky-bg);color:var(--sky-dk);border-radius:50px;padding:2px 8px;font-family:'DM Mono',monospace;font-size:11px;">${escHtml(fmtCardio(b))}</span>`).join(' ')}</div>
       </div>`;
     }
     const doneSets = (logSets[i] || []).filter(s => s.done || s.w || s.r);
@@ -3589,7 +3946,7 @@ function emailMonthSummary() {
         byEx[set.name].push(set);
       });
       Object.entries(byEx).forEach(([name, sets]) => {
-        const detail = sets.map(s => s.w ? `${s.w}kg×${s.r}` : s.r ? `${s.r}s` : s.machine ? `${s.output || '—'} · ${s.rounds ?? '—'}/4 rounds` : '—').join(', ');
+        const detail = sets.map(fmtSet).join(sets[0].cardioType ? " | " : ", ");
         lines.push(`   • ${name}: ${detail}`);
       });
     }
@@ -3636,12 +3993,18 @@ ${sessions.length} session${sessions.length !== 1 ? 's' : ''} completed · ALICI
 function emailSummary() {
   if (!lastFinishedEntry) return;
   const { entry, day, logSetsSnapshot } = lastFinishedEntry;
+  const exercises = lastFinishedEntry.exercises || day.exercises;
   const dateStr = new Date(entry.ts).toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
   const totalWeeks = Math.max(1, Math.min(26, Math.ceil((Date.now() - appState.startDate) / (7*24*3600*1000))));
 
   // Build exercise lines
   const exLines = [];
-  day.exercises.forEach((ex, i) => {
+  exercises.forEach((ex, i) => {
+    if (ex.cardioType) {
+      const bouts = (logSetsSnapshot[i] || []).map(s => fmtCardio({ ...s, cardioType: ex.cardioType })).filter(t => t !== '—');
+      if (bouts.length) exLines.push(`  • ${ex.name}: ${bouts.join(' | ')}`);
+      return;
+    }
     if (ex.interval) {
       const st = (logSetsSnapshot[i] || [])[0];
       if (st && (st.output || st.rounds > 0)) {
@@ -3661,7 +4024,7 @@ function emailSummary() {
 
   // PBs this session
   const pbLines = [];
-  day.exercises.forEach((ex, i) => {
+  exercises.forEach((ex, i) => {
     (logSetsSnapshot[i] || []).forEach(set => {
       const pb = appState.pbs[ex.name];
       if (set.w && pb && parseFloat(set.w) >= pb.w) {
@@ -3820,7 +4183,7 @@ function buildFullHistoryText() {
         byEx[set.name].push(set);
       });
       Object.entries(byEx).forEach(([name, sets]) => {
-        const detail = sets.map(s => s.w ? `${s.w}kg×${s.r}` : s.r ? `${s.r}s` : s.machine ? `${s.output || '—'} · ${s.rounds ?? '—'}/4 rounds` : '—').join(', ');
+        const detail = sets.map(fmtSet).join(sets[0].cardioType ? " | " : ", ");
         const tgt = appState.targets[name];
         const tgtNote = tgt ? ` [target: ${tgt.w}]` : '';
         lines.push(`  • ${name}: ${detail}${tgtNote}`);
@@ -3911,7 +4274,7 @@ function emailFullHistory() {
         byEx[set.name].push(set);
       });
       Object.entries(byEx).forEach(([name, sets]) => {
-        const detail = sets.map(s => s.w ? `${s.w}kg×${s.r}` : s.r ? `${s.r}s` : s.machine ? `${s.output || '—'} · ${s.rounds ?? '—'}/4 rounds` : '—').join(', ');
+        const detail = sets.map(fmtSet).join(sets[0].cardioType ? " | " : ", ");
         const tgt = appState.targets[name];
         const tgtNote = tgt ? ` [target: ${tgt.w}]` : '';
         lines.push(`  • ${name}: ${detail}${tgtNote}`);
@@ -4033,7 +4396,8 @@ function renderCalendar() {
 
   grid.innerHTML = html;
   // Hide detail if showing
-  document.getElementById('cal-detail').style.display = 'none';
+  const calDetail = document.getElementById('cal-detail');
+  if (calDetail) calDetail.style.display = 'none';
 }
 
 function onCalDayClick(d) {
@@ -4096,7 +4460,12 @@ function onCalDayClick(d) {
         html += `<div style="margin-bottom:6px;padding:8px 10px;background:var(--white);border:1px solid var(--border);border-radius:var(--r-xs);">`;
         html += `<div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:5px;">${name}</div>`;
 
-        if (timed) {
+        if (sets[0].cardioType) {
+          const pills = sets.map(set =>
+            `<span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--sky-dk);background:var(--sky-bg);padding:2px 7px;border-radius:50px;">${escHtml(fmtCardio(set))}</span>`
+          ).join(' ');
+          html += `<div style="display:flex;gap:4px;flex-wrap:wrap;">${pills}</div>`;
+        } else if (timed) {
           const pills = sets.map((set, i) =>
             `<span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--sky-dk);background:var(--sky-bg);padding:2px 7px;border-radius:50px;">S${i+1}: ${set.r || '?'}s</span>`
           ).join(' ');
@@ -4148,6 +4517,7 @@ async function deleteWorkout(id) {
     if (error) { showSync('error', 'Delete failed'); console.error(error); return; }
   }
   appState.workoutHistory = appState.workoutHistory.filter(h => String(h.id) !== String(id));
+  await syncPBs();
   showSync('saved', 'Session deleted ✓');
   renderHome();
   renderProgress();
@@ -4398,11 +4768,13 @@ function renderProgress() {
   const pbs = appState.pbs || {};
   document.getElementById('pb-grid').innerHTML = KEY_LIFTS.map(l => {
     const tgt = getTarget(l);
+    const { best, last } = exerciseStats(l);
     return `
     <div class="pb-card">
       <div class="pb-ex">${l}</div>
       <div class="pb-val">${pbs[l] ? pbs[l].w : '—'}</div>
-      <div class="pb-unit">${pbs[l] ? `kg × ${pbs[l].r} reps` : 'Not logged yet'}</div>
+      <div class="pb-unit">${pbs[l] ? `kg × ${pbs[l].r} reps${best?.ts ? ` · ${fmtShortDate(best.ts)}` : ''}` : 'Not logged yet'}</div>
+      ${last ? `<div style="margin-top:6px;font-size:10.5px;color:var(--ink3);line-height:1.4;">Last ${fmtShortDate(last.ts)}: <span style="font-family:'DM Mono',monospace;color:var(--ink2);">${fmtSetList(last.sets)}</span></div>` : ''}
       ${tgt ? `<div style="margin-top:7px;"><span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:50px;background:var(--rose-bg);color:var(--rose-dk);font-size:10px;font-weight:600;letter-spacing:0.2px;">🎯 ${tgt.w}</span></div>` : ''}
     </div>`;
   }).join('');
@@ -4436,7 +4808,7 @@ function renderProgress() {
         byEx[s.name].push(s);
       });
       Object.entries(byEx).forEach(([name, sets]) => {
-        const detail = sets.map(s => s.w ? `${s.w}kg×${s.r}` : s.r ? `${s.r}s` : s.machine ? `${s.output || '—'} · ${s.rounds ?? '—'}/4 rounds` : '—').join(', ');
+        const detail = sets.map(fmtSet).join(sets[0].cardioType ? " | " : ", ");
         exRows += `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px;">
           <span style="color:var(--ink2);">${name}</span>
           <span style="font-family:'DM Mono',monospace;color:var(--ink3);font-size:11px;">${detail}</span>
@@ -4819,6 +5191,22 @@ function openEditModal(id) {
 
   body.innerHTML = dateBlock + (Object.entries(byEx).map(([name, sets]) => {
     const keys = keysByEx[name];
+    if (sets[0].cardioType) {
+      const fields = (CARDIO_MACHINES[sets[0].cardioType] || CARDIO_MACHINES.other).fields;
+      return `<div style="background:var(--paper);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px 14px;">
+        <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:10px;">${escHtml(name)}</div>
+        ${sets.map((s, si) => `
+          <div class="cardio-row">
+            <div class="set-num">${si + 1}</div>
+            <div class="cardio-fields" style="grid-template-columns:repeat(${fields.length},1fr);">
+              ${fields.map(f => `<label class="cardio-field">${CARDIO_FIELDS[f].label}
+                <input class="set-inp" type="${CARDIO_FIELDS[f].mode === 'text' ? 'text' : 'number'}" step="any" inputmode="${CARDIO_FIELDS[f].mode}"
+                  data-set-key="${keys[si]}" data-field="${f}" value="${escHtml(s[f])}" placeholder="${CARDIO_FIELDS[f].ph}">
+              </label>`).join('')}
+            </div>
+          </div>`).join('')}
+      </div>`;
+    }
     const isTimed = sets.every(s => !s.w && s.r);
     return `<div style="background:var(--paper);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px 14px;">
       <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:10px;">${name}</div>
@@ -4874,7 +5262,7 @@ async function saveEditedSession() {
     const field = inp.getAttribute("data-field");
     const val = inp.value.trim();
     if (!updatedSets[key]) return;
-    updatedSets[key][field] = val === "" ? null : parseFloat(val);
+    updatedSets[key][field] = val === "" ? null : (field === "pace" ? val : parseFloat(val));
   });
 
   // Recalculate total volume
@@ -4898,16 +5286,8 @@ async function saveEditedSession() {
   workout.vol = Math.round(newVol);
   workout.ts = newTs;
 
-  // Re-scan PBs for edited exercises — update appState.pbs if this session now has a higher value
-  Object.values(updatedSets).forEach(s => {
-    if (!s || !s.name || !s.w) return;
-    const existing = appState.pbs[s.name];
-    const w = parseFloat(s.w), r = parseFloat(s.r);
-    if (!existing || w > existing.w || (w === existing.w && r > existing.r)) {
-      appState.pbs[s.name] = { w, r };
-      savePB(s.name, w, r);
-    }
-  });
+  // Rebuild PBs from history — an edit can lower a PB as well as raise it
+  await syncPBs();
 
   // Save to Supabase
   if (!window.PREVIEW_MODE) {
@@ -4972,12 +5352,17 @@ window.clearOverride = clearOverride;
 window.setLogPhase = setLogPhase;
 window.setLogDay = setLogDay;
 window.setCardioPick = setCardioPick;
+window.setExNote = setExNote;
+window.updCardio = updCardio;
+window.addCardioEx = addCardioEx;
+window.onCexTypeChange = onCexTypeChange;
 window.useSuggestion = useSuggestion;
 window.loadModifiedWorkout = loadModifiedWorkout;
 window.sendHomeCoachMessage = sendHomeCoachMessage;
 window.sendCoachMessage = sendCoachMessage;
 (async function () {
   const isLocal = window.location.protocol === 'file:' || window.location.hostname === 'localhost';
+  loadLocalExNotes();
   if (isLocal) {
     // Preview mode — load mock data instantly, no Supabase needed
     loadMockData();
