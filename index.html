@@ -1833,6 +1833,12 @@ function mergeWorkoutSets(existingSets, newSets) {
   return merged;
 }
 
+// History is kept oldest → newest by workout date; lists, "last workout"
+// and targets all rely on that order.
+function sortHistory() {
+  appState.workoutHistory.sort((a, b) => a.ts - b.ts);
+}
+
 async function mergeDuplicates() {
   const history = appState.workoutHistory;
   if (history.length < 2) return;
@@ -3379,6 +3385,7 @@ async function finishWorkout(opts = {}) {
     const id = await saveWorkout(entry);
     if (id) entry.id = id;
     appState.workoutHistory.push(entry);
+    sortHistory(); // an auto-saved workout can be dated earlier than today
   }
 
   // Check PBs BEFORE updating them so we can show what's new
@@ -5416,8 +5423,6 @@ async function saveEditedSession() {
   workout.vol = Math.round(newVol);
   workout.ts = newTs;
 
-  // Rebuild PBs from history — an edit can lower a PB as well as raise it
-  await syncPBs();
 
   // Save to Supabase
   if (!window.PREVIEW_MODE) {
@@ -5437,8 +5442,15 @@ async function saveEditedSession() {
     showSync("saved", "Session updated ✓ (preview)");
   }
 
+  // A new date may land on a day that already has a workout — merge them
+  // (same-day rule), then put everything back in date order.
+  await mergeDuplicates();
+  sortHistory();
+  await syncPBs(); // an edit can raise a PB (lowering one is done by hand)
+
   closeEditModal();
   renderProgress();
+  renderHome();
   setTimeout(hideSync, 2500);
 }
 
