@@ -454,6 +454,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 .ex-context .ctx-lbl { display:inline-block; min-width:34px; font-size:9.5px; font-weight:700; letter-spacing:0.6px; text-transform:uppercase; color:var(--ink3); }
 .ex-context .ctx-val { font-family:'DM Mono', monospace; color:var(--ink2); }
 .ex-context .ctx-date { margin-left:4px; font-size:10.5px; }
+.ex-context .ctx-edit { margin-left:8px; padding:0 6px; border:none; background:none; color:var(--sky-dk); font-size:10.5px; font-weight:600; cursor:pointer; font-family:inherit; }
 .ex-context .ctx-text { color:var(--ink2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
 /* Per-exercise notes and gym settings — saved, carry over every session */
@@ -1647,9 +1648,10 @@ async function loadFromSupabase() {
   try {
     showSync('syncing', 'Loading your data…');
 
-    const [{ data: workouts }, { data: foods }, { data: metricsData }, { data: pbsData }, { data: targetsData }] =
+    const [{ data: workouts }, { data: archivedWorkouts }, { data: foods }, { data: metricsData }, { data: pbsData }, { data: targetsData }] =
       await Promise.all([
         sb.from('workouts').select('*').eq('archived', false).order('ts', { ascending: true }),
+        sb.from('workouts').select('ts, sets_data').or('archived.eq.true,archived.is.null'),
         sb.from('food_log').select('*').order('created_at', { ascending: true }),
         sb.from('metrics').select('*').order('ts', { ascending: true }),
         sb.from('personal_bests').select('*'),
@@ -1668,6 +1670,9 @@ async function loadFromSupabase() {
       totalSets: w.total_sets,
       vol: w.vol,
     }));
+
+    // Archived workouts: hidden from history, but their lifts still count for PBs
+    appState.archivedWorkouts = (archivedWorkouts || []).map(w => ({ ts: w.ts, sets: w.sets_data }));
 
     // Food log — group by date
     appState.foodLog = {};
@@ -2886,7 +2891,7 @@ function findPrev(history, name) {
     const sets = history[i].sets || {};
     for (const k in sets) {
       const s = sets[k];
-      if (s && s.name === name && s.w) {
+      if (s && canonicalName(s.name) === name && s.w) {
         if (!best || parseFloat(s.w) > parseFloat(best.w) || (parseFloat(s.w) === parseFloat(best.w) && parseFloat(s.r) > parseFloat(best.r))) {
           best = s;
         }
@@ -2900,7 +2905,7 @@ function findLastSession(name) {
   const history = appState.workoutHistory || [];
   for (let i = history.length - 1; i >= 0; i--) {
     const sets = history[i].sets || {};
-    const exSets = Object.values(sets).filter(s => s && s.name === name && (s.w || s.r || s.cardioType));
+    const exSets = Object.values(sets).filter(s => s && canonicalName(s.name) === name && (s.w || s.r || s.cardioType));
     if (exSets.length > 0) return exSets;
   }
   return null;
@@ -2967,39 +2972,69 @@ function isBetterSet(s, best) {
   return (parseFloat(s.r) || 0) > (parseFloat(best.r) || 0);
 }
 
-// Best-ever set and the most recent session for one exercise, read
-// straight from logged history so it can never drift from what was done.
+// Earlier programme versions logged the same lift under another name.
+// Their sessions count towards the current exercise's best and last.
+const EXERCISE_ALIASES = {
+  'Barbell Hip Thrust':        'Hip Thrust',
+  'Machine Hip Abduction':     'Hip Abduction',
+  'Wide Grip Pull Down':       'Lat Pulldown',
+  'Wide Grip Pulldown':        'Lat Pulldown',
+  'Wide Grip Lat Pulldown':    'Lat Pulldown',
+  'Dumbbell Bench Press':      'Flat Press',
+  'Barbell Romanian Deadlift': 'Romanian Deadlift',
+  'DB Bulgarian Split Squat':  'Bulgarian Split Squat',
+  'Cable Glute Kickback':      'Cable Kickback',
+  'Hyperextension':            'Back Extension',
+  'Cable Face Pull':           'Face Pull',
+  'Dumbbell Lateral Raise':    'Lateral Raise',
+};
+const canonicalName = n => EXERCISE_ALIASES[n] || n;
+
+// Every workout ever saved, including archived ones (hidden from history
+// lists but still real lifts), for PB and best-ever purposes.
+function allWorkoutsForStats() {
+  return [...(appState.archivedWorkouts || []), ...(appState.workoutHistory || [])];
+}
+
+// Best-ever set and the most recent session for one exercise.
 function exerciseStats(name) {
   let best = null, last = null;
-  for (const h of appState.workoutHistory || []) {
-    const sets = Object.values(h.sets || {}).filter(s => s && s.name === name && (s.w || s.r || s.cardioType));
+  for (const h of allWorkoutsForStats()) {
+    const sets = Object.values(h.sets || {}).filter(s => s && canonicalName(s.name) === name && (s.w || s.r || s.cardioType));
     if (!sets.length) continue;
     if (!last || h.ts >= last.ts) last = { ts: h.ts, sets };
     if (sets[0].cardioType || sets[0].machine) continue;
-    sets.forEach(s => { if (isBetterSet(s, best)) best = { w: s.w, r: s.r, ts: h.ts }; });
+    sets.forEach(s => { if (s.w && isBetterSet(s, best)) best = { w: s.w, r: s.r, ts: h.ts }; });
   }
-  if (!best && appState.pbs?.[name]) best = { ...appState.pbs[name], ts: null };
+  // The saved PB wins when it beats anything in the logged workouts
+  // (e.g. a PB set by hand, or from before the app kept full history).
+  const pb = appState.pbs?.[name];
+  if (pb && pb.w && isBetterSet(pb, best)) best = { ...pb, ts: null };
   return { best, last };
 }
 
-// Rebuild PBs from workout history. The stored table used to be updated
-// incrementally and could fall behind (edits, merges, deletes); history is
-// the source of truth. Returns names whose PB changed so callers can sync.
+// Raise PBs to the best set found in any saved workout. Never lowers a
+// PB: the saved table can hold lifts that aren't in visible history.
+// Returns names whose PB went up so callers can save them.
 function recomputePBs() {
-  const derived = {};
-  for (const h of appState.workoutHistory || []) {
+  const changed = new Set();
+  const raise = (name, cand) => {
+    if (!cand || !cand.w) return;
+    const cur = appState.pbs[name];
+    if (!cur || isBetterSet(cand, cur)) {
+      appState.pbs[name] = { w: parseFloat(cand.w), r: parseFloat(cand.r) || 0 };
+      changed.add(name);
+    }
+  };
+  // PBs saved under an old exercise name carry over to the new name
+  for (const [oldName, newName] of Object.entries(EXERCISE_ALIASES)) raise(newName, appState.pbs[oldName]);
+  for (const h of allWorkoutsForStats()) {
     for (const s of Object.values(h.sets || {})) {
       if (!s?.name || !s.w || s.cardioType || s.machine) continue;
-      if (isBetterSet(s, derived[s.name])) derived[s.name] = { w: parseFloat(s.w), r: parseFloat(s.r) || 0 };
+      raise(canonicalName(s.name), s);
     }
   }
-  const changed = [];
-  for (const [name, pb] of Object.entries(derived)) {
-    const cur = appState.pbs[name];
-    if (!cur || cur.w !== pb.w || cur.r !== pb.r) changed.push(name);
-    appState.pbs[name] = pb;
-  }
-  return changed;
+  return [...changed];
 }
 
 async function syncPBs() {
@@ -3007,15 +3042,39 @@ async function syncPBs() {
   await Promise.all(changed.map(n => savePB(n, appState.pbs[n].w, appState.pbs[n].r)));
 }
 
+// Set a PB by hand, e.g. "25 x 10". Lets you correct a PB in either direction.
+async function editPB(name) {
+  const cur = appState.pbs[name];
+  const input = prompt(`${name} — personal best (kg × reps)`, cur ? `${cur.w} x ${cur.r}` : '');
+  if (input === null) return;
+  const m = input.trim().match(/^([\d.]+)\s*(?:kg)?\s*[x×*]\s*(\d+)/i);
+  if (!m) { alert('Please enter it like: 25 x 10'); return; }
+  const w = parseFloat(m[1]), r = parseInt(m[2]);
+  appState.pbs[name] = { w, r };
+  showSync('syncing', 'Saving PB…');
+  if (!window.PREVIEW_MODE) {
+    const { error } = await sb.from('personal_bests').upsert({ exercise: name, weight: w, reps: r }, { onConflict: 'exercise' });
+    if (error) { showSync('error', 'PB save failed'); console.error(error); return; }
+  }
+  showSync('saved', 'PB saved ✓');
+  renderProgress();
+  renderLog();
+  renderHomeProgress();
+}
+
 const fmtShortDate = ts => new Date(ts).toLocaleDateString('en-GB', { day:'numeric', month:'short' });
 const escHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+
+const pbEditBtn = name => `<button class="ctx-edit" onclick="event.stopPropagation();editPB(decodeURIComponent('${encodeURIComponent(name)}'))">✎ edit</button>`;
 
 function renderExContext(ex) {
   const { best, last } = exerciseStats(ex.name);
   const n = exNotes[ex.name] || {};
   const rows = [];
   if (best && best.w) {
-    rows.push(`<div><span class="ctx-lbl">Best</span><span class="ctx-val">${best.w}kg × ${best.r}</span>${best.ts ? `<span class="ctx-date">${fmtShortDate(best.ts)}</span>` : ''}</div>`);
+    rows.push(`<div><span class="ctx-lbl">Best</span><span class="ctx-val">${best.w}kg × ${best.r}</span>${best.ts ? `<span class="ctx-date">${fmtShortDate(best.ts)}</span>` : ''}${pbEditBtn(ex.name)}</div>`);
+  } else if (!ex.cardioType && !ex.interval && !isTimed(ex)) {
+    rows.push(`<div><span class="ctx-lbl">Best</span><span class="ctx-val">—</span>${pbEditBtn(ex.name)}</div>`);
   }
   if (last) {
     rows.push(`<div><span class="ctx-lbl">Last</span><span class="ctx-val">${escHtml(fmtSetList(last.sets, ex))}</span><span class="ctx-date">${fmtShortDate(last.ts)}</span></div>`);
@@ -4770,10 +4829,10 @@ function renderProgress() {
     const tgt = getTarget(l);
     const { best, last } = exerciseStats(l);
     return `
-    <div class="pb-card">
-      <div class="pb-ex">${l}</div>
-      <div class="pb-val">${pbs[l] ? pbs[l].w : '—'}</div>
-      <div class="pb-unit">${pbs[l] ? `kg × ${pbs[l].r} reps${best?.ts ? ` · ${fmtShortDate(best.ts)}` : ''}` : 'Not logged yet'}</div>
+    <div class="pb-card" onclick="editPB('${l}')" style="cursor:pointer;">
+      <div class="pb-ex" style="display:flex;justify-content:space-between;">${l}<span style="color:var(--sky-dk);font-weight:600;">✎</span></div>
+      <div class="pb-val">${best?.w ? best.w : '—'}</div>
+      <div class="pb-unit">${best?.w ? `kg × ${best.r} reps${best.ts ? ` · ${fmtShortDate(best.ts)}` : ''}` : 'Not logged yet'}</div>
       ${last ? `<div style="margin-top:6px;font-size:10.5px;color:var(--ink3);line-height:1.4;">Last ${fmtShortDate(last.ts)}: <span style="font-family:'DM Mono',monospace;color:var(--ink2);">${fmtSetList(last.sets)}</span></div>` : ''}
       ${tgt ? `<div style="margin-top:7px;"><span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:50px;background:var(--rose-bg);color:var(--rose-dk);font-size:10px;font-weight:600;letter-spacing:0.2px;">🎯 ${tgt.w}</span></div>` : ''}
     </div>`;
@@ -5353,6 +5412,7 @@ window.setLogPhase = setLogPhase;
 window.setLogDay = setLogDay;
 window.setCardioPick = setCardioPick;
 window.setExNote = setExNote;
+window.editPB = editPB;
 window.updCardio = updCardio;
 window.addCardioEx = addCardioEx;
 window.onCexTypeChange = onCexTypeChange;
