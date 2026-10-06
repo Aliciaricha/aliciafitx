@@ -1492,7 +1492,8 @@ let restTimer = null, restTotal = 0, restLeft = 0;
 let calYear = new Date().getFullYear(), calMonth = new Date().getMonth();
 let lastFinishedEntry = null;
 let autoSaveTimer = null, autoCompleteTimer = null;
-const AUTO_COMPLETE_MS = 20 * 60 * 1000;
+const AUTO_COMPLETE_MS = 60 * 60 * 1000; // an unfinished workout saves itself after an hour with no activity
+let lastActivityTs = null;
 let homeCoachHistory = [];
 let cardioPickIdx = 0;
 let volumeChartRange = '3m'; // '4w' | '3m' | 'all'
@@ -1932,56 +1933,100 @@ async function savePB(exercise, w, r) {
 }
 
 /* ═══════════════════════════════════════════════════════
-   AUTO-SAVE DRAFT (saves logSets to localStorage as fallback)
+   AUTO-SAVE DRAFT
+   Everything being logged is kept in localStorage. A draft is never
+   thrown away: on the next app open it is either restored (if recent)
+   or saved as a workout dated to when it was last touched.
 ═══════════════════════════════════════════════════════ */
+const DRAFT_KEY = 'aliciafit_draft';
+
+// True if any set has something the user actually entered or ticked.
+// Ignores placeholders the cards create on render (interval machine, 0 rounds).
+function draftHasData(sets) {
+  return Object.values(sets || {}).some(arr => Array.isArray(arr) && arr.some(s => s && (
+    s.done || s.rounds > 0 ||
+    Object.entries(s).some(([k, v]) => !['done', 'name', 'machine', 'rounds'].includes(k) && v !== undefined && v !== null && v !== '')
+  )));
+}
+
 function saveDraft() {
   try {
-    localStorage.setItem('aliciafit_draft', JSON.stringify({
-      phase: logPhase, day: logDay, sets: logSets, warmup: warmupState, ts: Date.now()
+    if (!draftHasData(logSets)) { clearDraft(); return; }
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({
+      phase: logPhase, day: logDay, sets: logSets, warmup: warmupState,
+      custom: customExercises, override: appState.customDayOverride || null,
+      ts: lastActivityTs || Date.now(),
     }));
   } catch(e) {}
 }
 
-function loadDraft() {
-  try {
-    const d = JSON.parse(localStorage.getItem('aliciafit_draft') || 'null');
-    if (!d) return;
-    // Only restore if draft is less than 4 hours old
-    if (Date.now() - d.ts > 4 * 60 * 60 * 1000) { clearDraft(); return; }
-    logPhase = d.phase;
-    logDay = d.day;
-    logSets = d.sets || {};
-    warmupState = d.warmup || {};
-    showSync('saved', 'Draft restored ✓');
-    setTimeout(hideSync, 2500);
-  } catch(e) {}
-}
-
 function clearDraft() {
-  try { localStorage.removeItem('aliciafit_draft'); } catch(e) {}
+  try { localStorage.removeItem(DRAFT_KEY); } catch(e) {}
 }
 
 function scheduleAutoSave() {
+  lastActivityTs = Date.now();
   clearTimeout(autoSaveTimer);
   autoSaveTimer = setTimeout(() => saveDraft(), 800); // debounce 800ms
   resetAutoComplete();
 }
 
+async function autoSaveWorkout(ts) {
+  if (!draftHasData(logSets)) return;
+  stopAutoComplete();
+  showSync('syncing', 'Auto-saving your workout…');
+  await finishWorkout({ ts: ts || lastActivityTs || Date.now(), silent: true });
+  showSync('saved', 'Workout auto-saved ✓');
+  setTimeout(hideSync, 3000);
+}
+
+// On app open: bring back an unfinished workout, or save it if it's stale.
+// Returns true if a workout was restored into the Log page.
+async function recoverDraft() {
+  let d = null;
+  try { d = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch(e) {}
+  if (!d || !draftHasData(d.sets)) { clearDraft(); return false; }
+  logPhase = d.phase || 1;
+  logDay = d.day || logDay;
+  logSets = d.sets;
+  warmupState = d.warmup || {};
+  customExercises = d.custom || [];
+  appState.customDayOverride = d.override || null;
+  lastActivityTs = d.ts || Date.now();
+  const idle = Date.now() - lastActivityTs;
+  if (idle >= AUTO_COMPLETE_MS) {
+    const savedTs = lastActivityTs;
+    await finishWorkout({ ts: savedTs, silent: true });
+    showSync('saved', `Saved your unfinished workout from ${fmtShortDate(savedTs)} ✓`);
+    setTimeout(hideSync, 4000);
+    return false;
+  }
+  showSync('saved', 'Unfinished workout restored ✓');
+  setTimeout(hideSync, 2500);
+  clearTimeout(autoCompleteTimer);
+  autoCompleteTimer = setTimeout(() => autoSaveWorkout(), AUTO_COMPLETE_MS - idle);
+  return true;
+}
+
 /* ═══════════════════════════════════════════════════════
-   AUTO-COMPLETE AFTER 20 MIN INACTIVITY
+   AUTO-COMPLETE AFTER AN HOUR OF INACTIVITY
+   Works from any page. Phones pause timers in the background, so
+   returning to the app also checks (see visibilitychange below).
 ═══════════════════════════════════════════════════════ */
 function resetAutoComplete() {
   clearTimeout(autoCompleteTimer);
-  autoCompleteTimer = setTimeout(() => {
-    // Only auto-complete if we're on the log page and have some data
-    const logPage = document.getElementById('page-log');
-    const hasSets = Object.values(logSets).some(arr => arr.some(s => s.done || s.w || s.r));
-    if (logPage.classList.contains('active') && hasSets) {
-      showSync('saved', 'Auto-saving session…');
-      finishWorkout();
-    }
-  }, AUTO_COMPLETE_MS);
+  autoCompleteTimer = setTimeout(() => autoSaveWorkout(), AUTO_COMPLETE_MS);
 }
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') {
+    clearTimeout(autoSaveTimer);
+    saveDraft();
+  } else if (lastActivityTs && draftHasData(logSets) && Date.now() - lastActivityTs >= AUTO_COMPLETE_MS) {
+    autoSaveWorkout(lastActivityTs);
+  }
+});
+window.addEventListener('pagehide', () => saveDraft());
 
 function stopAutoComplete() {
   clearTimeout(autoCompleteTimer);
@@ -2161,8 +2206,11 @@ function renderSmartBanner(session, history) {
     </div>`;
 }
 
-function goLog(dayKey, phase) {
-  logPhase = phase; logDay = dayKey; logSets = {}; cardioPickIdx = 0;
+async function goLog(dayKey, phase) {
+  if (dayKey !== logDay || phase !== logPhase) {
+    if (!(await keepLoggedSets())) return;
+    logPhase = phase; logDay = dayKey; logSets = {}; cardioPickIdx = 0;
+  }
   showPage('log', document.querySelectorAll('.nav-btn')[2]);
 }
 
@@ -2413,8 +2461,21 @@ function renderLogSelectors() {
   document.getElementById('log-day-sel').innerHTML = dayChips + customChip;
 }
 
-function setLogPhase(p) { logPhase = p; logSets = {}; warmupState = {}; cardioPickIdx = 0; customExercises = []; showAddExForm = false; renderLog(); }
-function setLogDay(k) { logDay = k; logSets = {}; warmupState = {}; cardioPickIdx = 0; customExercises = []; showAddExForm = false; renderLog(); }
+// Before switching day, offer to save sets already logged so they aren't wiped.
+async function keepLoggedSets() {
+  if (!draftHasData(logSets)) return true;
+  const day = appState.customDayOverride || PROGRAM[logPhase][logDay];
+  if (!confirm(`Save the sets you've logged for ${day.name} before switching?
+
+OK = save them · Cancel = stay here`)) return false;
+  await finishWorkout({ silent: true });
+  showSync('saved', `${day.name} saved ✓`);
+  setTimeout(hideSync, 2500);
+  return true;
+}
+
+async function setLogPhase(p) { if (p === logPhase || !(await keepLoggedSets())) return; logPhase = p; logSets = {}; warmupState = {}; cardioPickIdx = 0; customExercises = []; showAddExForm = false; renderLog(); }
+async function setLogDay(k) { if (k === logDay || !(await keepLoggedSets())) return; logDay = k; logSets = {}; warmupState = {}; cardioPickIdx = 0; customExercises = []; showAddExForm = false; renderLog(); }
 function setCardioPick(idx) { cardioPickIdx = idx; renderLog(); }
 function clearOverride() { appState.customDayOverride = null; pendingModifiedWorkout = null; logSets = {}; warmupState = {}; customExercises = []; showAddExForm = false; renderLog(); }
 
@@ -3229,7 +3290,9 @@ function renderCardioCard(i, ex) {
     </div>`;
 }
 
-async function finishWorkout() {
+async function finishWorkout(opts = {}) {
+  const ts = opts.ts || Date.now();
+  clearTimeout(autoSaveTimer);
   const day = (appState.customDayOverride) ? appState.customDayOverride : PROGRAM[logPhase][logDay];
   const allExercises = [...day.exercises, ...customExercises];
   let totalSets = 0, totalReps = 0, totalVol = 0;
@@ -3274,13 +3337,13 @@ async function finishWorkout() {
   const completionPct = totalPossible > 0 ? Math.round((totalSets / totalPossible) * 100) : 100;
 
   let entry = {
-    ts: Date.now(), phase: logPhase, dayKey: logDay,
+    ts, phase: logPhase, dayKey: logDay,
     dayName: day.name, focus: day.focus, sets,
     totalSets, vol: Math.round(totalVol),
   };
 
   // Merge with existing same-day workout if one exists
-  const today = new Date();
+  const today = new Date(ts);
   const isSameDay = (h) => {
     const dt = new Date(h.ts);
     return dt.getDate() === today.getDate() &&
@@ -3410,7 +3473,13 @@ async function finishWorkout() {
   clearDraft();
   stopAutoComplete();
   appState.customDayOverride = null;
+  lastActivityTs = null;
   renderLog();
+  if (opts.silent) {
+    renderHome();
+    renderProgress();
+    return;
+  }
   launchConfetti();
   document.getElementById('complete-modal').classList.add('show');
 }
@@ -5081,13 +5150,15 @@ function stripJsonBlock(text) {
   return text.trim();
 }
 
-function loadModifiedWorkout() {
+async function loadModifiedWorkout() {
   if (!pendingModifiedWorkout) { alert('No modified workout available — ask the coach to modify your session first.'); return; }
   const session = getTodaySession();
   const w = pendingModifiedWorkout;
 
   const exercises = w.exercises || w.workout || w.session || [];
   if (!exercises.length) { alert('Could not load modified workout — try asking the coach again.'); return; }
+
+  if (!(await keepLoggedSets())) return;
 
   // Store as a custom day override in app state
   appState.customDayOverride = {
@@ -5432,13 +5503,14 @@ window.sendCoachMessage = sendCoachMessage;
     window.PREVIEW_MODE = true;
   } else {
     // Live mode — load real data from Supabase
-    await loadFromSupabase();
-    loadDraft();
-    document.getElementById('loading-screen').classList.add('hidden');
     window.PREVIEW_MODE = false;
+    await loadFromSupabase();
+    document.getElementById('loading-screen').classList.add('hidden');
   }
-  // Auto-select today's day and correct phase — always start with a clean log
-  (function() {
+  // An unfinished workout is restored, or saved if it's been left an hour+
+  const resumed = await recoverDraft();
+  // Otherwise auto-select today's day with a clean log
+  if (!resumed) (function() {
     const todayKey = ['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
     const weeksIn = Math.max(1, Math.ceil((Date.now() - appState.startDate) / (7 * 24 * 3600 * 1000)));
     logPhase = 1;
@@ -5456,6 +5528,8 @@ window.sendCoachMessage = sendCoachMessage;
     const goBtn = e.target.closest('[data-golog-day]');
     if (goBtn) {
       if (goBtn.getAttribute('data-use-modified') === '1' && pendingModifiedWorkout) {
+        (async () => {
+        if (!(await keepLoggedSets())) return;
         appState.customDayOverride = pendingModifiedWorkout;
         logPhase = parseInt(goBtn.getAttribute('data-golog-phase'));
         logDay = goBtn.getAttribute('data-golog-day');
@@ -5463,6 +5537,7 @@ window.sendCoachMessage = sendCoachMessage;
         showPage('log', document.querySelectorAll('.nav-btn')[2]);
         showSync('saved', 'Modified workout loaded 💪');
         setTimeout(hideSync, 3000);
+        })();
       } else {
         goLog(goBtn.getAttribute('data-golog-day'), parseInt(goBtn.getAttribute('data-golog-phase')));
       }
