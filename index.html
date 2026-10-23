@@ -1308,6 +1308,8 @@ const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
      both upper days, plus Prone Y-Raise for lower traps) and thoracic
      extension added to the upper warm-up. v1's upper days were unchanged
      between versions while lower work grew, which quietly de-prioritised it.
+   - Rest days are Tue and Fri (Upper A moved Tue → Wed in Oct 2026), so
+     the week runs Mon lower / Wed upper / Thu lower / Sat lower / Sun upper.
    - Intervals moved off Sunday. Sat lower → Sun intervals → Mon heavy lower
      put the hardest session at the end of three consecutive training days.
    - Core stays anti-extension only (Dead Bug, Hollow Body). No loaded
@@ -1332,7 +1334,7 @@ const LOWER_A_EXERCISES = [
     note:"Cable low, strap on the outside ankle, stand tall and hold something for balance. Lift the leg out and slightly back, no torso lean. When all 3 sets hit 15 clean reps per leg, add weight. Start 5kg, aim ~12kg."},
 ];
 
-/* Tuesday — press day, doubles as posture work. */
+/* Wednesday — press day, doubles as posture work. */
 const UPPER_A_EXERCISES = [
   {name:"Incline Press",        type:"Compound", equipment:"Dumbbells (pair)",    sets:4, reps:"8–10",    rest:REST.compound,  metric:"kg_per_db", key:true,
     note:"Incline bench, DB in each hand, press up and slightly in. First lift of the day — add weight every session (or a rep if no smaller DB is available). Start 10kg/DB, aim ~18.5kg/DB."},
@@ -1443,8 +1445,8 @@ const CUSTOM_DAY = { name:"Custom", focus:"Your own session", warmup:[], exercis
 const PROGRAM = {
   1: {
     mon: lowerADay("Monday"),
-    tue: upperADay("Tuesday"),
-    wed: { ...REST_DAY, name:"Wednesday" },
+    tue: { ...REST_DAY, name:"Tuesday" },
+    wed: upperADay("Wednesday"),
     thu: lowerBDay("Thursday"),
     fri: { ...REST_DAY, name:"Friday" },
     sat: lowerCDay("Saturday"),
@@ -1453,7 +1455,7 @@ const PROGRAM = {
   }
 };
 
-const DAY_KEYS = ['mon','tue','thu','sat','sun'];
+const DAY_KEYS = ['mon','wed','thu','sat','sun'];
 const PROG_VIEW_KEYS = ['mon','tue','wed','thu','fri','sat','sun'];
 const MEALS = [
   {name:"Breakfast",color:"#f9b8c4",kcal:398,foods:["150ml skim milk","30g whey protein","20g rolled oats","10g chia seeds","45g Greek yoghurt 0%","25g blueberries","5g walnuts","5g creatine · 5g collagen · psyllium husk"],macros:"P: 43.5g · C: 34g · F: 10.6g"},
@@ -1498,7 +1500,7 @@ let homeCoachHistory = [];
 let cardioPickIdx = 0;
 let volumeChartRange = '3m'; // '4w' | '3m' | 'all'
 let volumeChartMode = 'volume'; // 'volume' | 'trend' | 'focus'
-let volumeChartFocus = 'all'; // 'all' | 'mon' | 'tue' | 'wed' | 'thu' | 'sat' | 'sun'
+let volumeChartFocus = 'all'; // 'all' | 'mon' | 'wed' | 'thu' | 'sat' | 'sun'
 
 /* ═══════════════════════════════════════════════════════
    SYNC UI
@@ -1545,7 +1547,7 @@ function loadMockData() {
   const dayNamesFull = { mon:'Monday', tue:'Tuesday', wed:'Wednesday', thu:'Thursday', fri:'Friday', sat:'Saturday', sun:'Sunday' };
   const todayDow = new Date(now).getDay();
   const thisMonday = now - ((todayDow + 6) % 7) * day;
-  const dayIdx = { mon:0, tue:1, thu:3, sat:5, sun:6 };
+  const dayIdx = { mon:0, wed:2, thu:3, sat:5, sun:6 };
   const SESSION_TEMPLATES = {
     mon: { focus:'Lower A — Heavy Glutes', vol:2400, build: n => ({
       '0':{name:'Hip Thrust',              w:50 + 2.5*n,        r: n>=2?10:9},
@@ -1553,7 +1555,7 @@ function loadMockData() {
       '2':{name:'Hip Abduction',           w: n<2?30:32.5,      r: n<2?18:16},
       '3':{name:'Standing Cable Abduction',w: n<2?5:7.5,        r:15},
     })},
-    tue: { focus:'Upper A — Press & Posture', vol:1500, build: n => ({
+    wed: { focus:'Upper A — Press & Posture', vol:1500, build: n => ({
       '0':{name:'Incline Press',           w:10 + 2*n,          r: n===2?8:9},
       '1':{name:'Lat Pulldown',            w: n<2?35:37.5,      r: n<2?10:9},
       '2':{name:'Seated Shoulder Press',   w: n<2?8:10,         r: n===0?9:(n===1?10:9)},
@@ -1586,7 +1588,7 @@ function loadMockData() {
   appState.workoutHistory = [];
   let counter = 1;
   for (let wk = 2; wk >= 0; wk--) {
-    ['mon','tue','thu','sat','sun'].forEach(k => {
+    ['mon','wed','thu','sat','sun'].forEach(k => {
       const ts = thisMonday - wk * 7 * day + dayIdx[k] * day;
       if (ts >= now) return; // don't log a session for today or the future
       const n = 2 - wk; // 0 = oldest occurrence, 2 = most recent
@@ -2429,7 +2431,7 @@ const DEFAULT_TARGETS = [
   { exercise: "Back Extension",          target_weight: "17.5kg held", note: "Toes out, upper back rounded — that makes it a glute exercise. Start bodyweight (0kg). Add a held plate once all 3 sets hit 15 clean reps. 6-month target ~17.5kg held." },
   { exercise: "Hip Abduction",           target_weight: "60kg",        note: "Torso leaned forward ~45°. Start 30kg. Add weight once all 3 sets hit 20 clean reps. 6-month target ~60kg." },
   { exercise: "Standing Cable Abduction", target_weight: "12kg",       note: "Start 5kg. Stand tall, no torso lean. Add weight once all 3 sets hit 15 clean reps per leg. 6-month target ~12kg." },
-  // Tuesday — Upper A (Press & Posture)
+  // Wednesday — Upper A (Press & Posture)
   { exercise: "Incline Press",          target_weight: "18.5kg/DB",   note: "Start 10kg/DB. First lift of the day — add weight every session. 6-month target ~18.5kg/DB." },
   { exercise: "Lat Pulldown",           target_weight: "52.5kg",      note: "Start 35kg. Add weight once all 3 sets hit 10 clean reps. 6-month target ~52.5kg." },
   { exercise: "Seated Shoulder Press",  target_weight: "14kg/DB",     note: "Start 8kg/DB. Add weight once all 3 sets hit 10 clean reps. 6-month target ~14kg/DB." },
@@ -4716,7 +4718,7 @@ function renderVolumeChart() {
     const days = [
       { k: 'all', n: 'All days' },
       { k: 'mon', n: 'Mon — Lower A' },
-      { k: 'tue', n: 'Tue — Upper A' },
+      { k: 'wed', n: 'Wed — Upper A' },
       { k: 'thu', n: 'Thu — Lower B' },
       { k: 'sat', n: 'Sat — Lower C' },
       { k: 'sun', n: 'Sun — Upper B' },
@@ -4743,7 +4745,8 @@ function renderVolumeChart() {
 
   let data = allHistory.filter(h => h.ts >= cutoff && (h.vol || 0) > 0);
   if (volumeChartMode === 'focus' && volumeChartFocus !== 'all') {
-    data = data.filter(h => h.dayKey === volumeChartFocus);
+    // Upper A moved Tue → Wed; sessions logged before the move are stored as 'tue'
+    data = data.filter(h => h.dayKey === volumeChartFocus || (volumeChartFocus === 'wed' && h.dayKey === 'tue'));
   }
 
   // Headline stat
