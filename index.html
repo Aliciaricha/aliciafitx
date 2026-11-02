@@ -1745,6 +1745,9 @@ async function loadFromSupabase() {
     // Exercise notes & gym settings
     await loadRemoteExNotes();
 
+    // Share the weekly programme with other apps (runs in the background)
+    syncProgramToSupabase().catch(e => console.error('Programme sync failed', e));
+
     // Start date
     if (appState.workoutHistory.length > 0) {
       appState.startDate = appState.workoutHistory[0].ts;
@@ -3220,6 +3223,56 @@ function setExNote(i, field, val) {
   saveLocalExNotes();
   clearTimeout(exNoteTimers[ex.name]);
   exNoteTimers[ex.name] = setTimeout(() => pushExNote(ex.name), 800);
+}
+
+/* ── Programme sync ───────────────────────────────────────
+   Copies the weekly programme (PROGRAM above) into the Supabase
+   `program_days` table (see supabase/program_days.sql) so other apps,
+   e.g. North Star, can read the current Monday–Sunday routine.
+   PROGRAM in this file stays the single source of truth: edit the
+   programme here and the table follows the next time the app opens.
+   Rows are only rewritten when something actually changed. */
+function programRows() {
+  return PROG_VIEW_KEYS.map((k, i) => {
+    const d = PROGRAM[1][k];
+    return {
+      day_key: k,
+      position: i,
+      day_name: d.name,
+      focus: d.focus,
+      is_rest: !!d.isRest,
+      warmup: d.warmup || [],
+      exercises: d.exercises || [],
+    };
+  });
+}
+
+// jsonb does not keep key order, so compare with keys sorted
+function stableJson(v) {
+  if (Array.isArray(v)) return '[' + v.map(stableJson).join(',') + ']';
+  if (v && typeof v === 'object') {
+    return '{' + Object.keys(v).filter(k => v[k] !== undefined).sort()
+      .map(k => JSON.stringify(k) + ':' + stableJson(v[k])).join(',') + '}';
+  }
+  return JSON.stringify(v);
+}
+
+async function syncProgramToSupabase() {
+  if (window.PREVIEW_MODE) return;
+  const { data, error } = await sb.from('program_days')
+    .select('day_key, position, day_name, focus, is_rest, warmup, exercises');
+  if (error) { console.warn('program_days unavailable — programme not shared', error); return; }
+  const existing = {};
+  (data || []).forEach(r => {
+    const { day_key, position, day_name, focus, is_rest, warmup, exercises } = r;
+    existing[day_key] = stableJson({ day_key, position, day_name, focus, is_rest, warmup, exercises });
+  });
+  const changed = programRows().filter(r => existing[r.day_key] !== stableJson(r));
+  if (!changed.length) return;
+  const now = new Date().toISOString();
+  const { error: upErr } = await sb.from('program_days')
+    .upsert(changed.map(r => ({ ...r, updated_at: now })), { onConflict: 'day_key' });
+  if (upErr) console.error('Could not sync programme', upErr);
 }
 
 /* ── Custom cardio ─────────────────────────────────────── */
