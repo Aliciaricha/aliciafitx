@@ -1747,6 +1747,7 @@ async function loadFromSupabase() {
 
     // Share the weekly programme with other apps (runs in the background)
     syncProgramToSupabase().catch(e => console.error('Programme sync failed', e));
+    syncProgressionRulesToSupabase().catch(e => console.error('Progression rules sync failed', e));
 
     // Start date
     if (appState.workoutHistory.length > 0) {
@@ -3273,6 +3274,40 @@ async function syncProgramToSupabase() {
   const { error: upErr } = await sb.from('program_days')
     .upsert(changed.map(r => ({ ...r, updated_at: now })), { onConflict: 'day_key' });
   if (upErr) console.error('Could not sync programme', upErr);
+}
+
+/* ── Progression rules sync ───────────────────────────────
+   Copies PROGRESSION_RULES into the Supabase `progression_rules` table
+   (see supabase/progression_rules.sql) so other apps, e.g. North Star,
+   predict loads with the same rule as Today's Target. PROGRESSION_RULES
+   stays the single source of truth; only changed rows are rewritten and
+   rules removed here are removed from the table. */
+function progressionRuleRows() {
+  return Object.entries(PROGRESSION_RULES).map(([exercise, r]) => ({
+    exercise, mode: r.mode, inc: r.inc, rep_target: r.repTarget ?? null,
+  }));
+}
+
+async function syncProgressionRulesToSupabase() {
+  if (window.PREVIEW_MODE) return;
+  const { data, error } = await sb.from('progression_rules').select('exercise, mode, inc, rep_target');
+  if (error) { console.warn('progression_rules unavailable — rules not shared', error); return; }
+  const existing = {};
+  (data || []).forEach(r => { existing[r.exercise] = stableJson({ exercise: r.exercise, mode: r.mode, inc: Number(r.inc), rep_target: r.rep_target ?? null }); });
+  const rows = progressionRuleRows();
+  const changed = rows.filter(r => existing[r.exercise] !== stableJson(r));
+  if (changed.length) {
+    const now = new Date().toISOString();
+    const { error: upErr } = await sb.from('progression_rules')
+      .upsert(changed.map(r => ({ ...r, updated_at: now })), { onConflict: 'exercise' });
+    if (upErr) console.error('Could not sync progression rules', upErr);
+  }
+  const current = new Set(rows.map(r => r.exercise));
+  const removed = Object.keys(existing).filter(name => !current.has(name));
+  if (removed.length) {
+    const { error: delErr } = await sb.from('progression_rules').delete().in('exercise', removed);
+    if (delErr) console.error('Could not remove old progression rules', delErr);
+  }
 }
 
 /* ── Custom cardio ─────────────────────────────────────── */
